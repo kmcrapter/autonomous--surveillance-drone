@@ -1,0 +1,3953 @@
+<?xml version="1.0" ?>
+<sdf version="1.8">
+  <world name="surveillance_world">
+    <!-- Geographic Datum Reference (WGS84 Reference Origin) -->
+    <spherical_coordinates>
+      <surface_model>EARTH_WGS84</surface_model>
+      <latitude_deg>44.500000</latitude_deg>
+      <longitude_deg>-110.500000</longitude_deg>
+      <elevation>1800.0</elevation>
+      <heading_deg>0.0</heading_deg>
+    </spherical_coordinates>
+
+    <physics name="standard_physics" type="ignored">
+      <max_step_size>0.002</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+
+    <!-- User Camera GUI Configuration (Oriented toward Drone Home Pad) -->
+    <gui fullscreen="0">
+      <camera name="user_camera">
+        <pose>-6 -10 4.5 0 0.35 1.05</pose>
+        <view_controller>orbit</view_controller>
+      </camera>
+    </gui>
+
+    <!-- Essential Gazebo Plugins -->
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+
+    <!-- Atmosphere and Sky -->
+    <atmosphere type="adiabatic"/>
+    
+    <!-- Primary Directional Sun -->
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>50 -50 80 0 0.45 -0.8</pose>
+      <diffuse>0.92 0.90 0.82 1</diffuse>
+      <specular>0.3 0.3 0.25 1</specular>
+      <direction>-0.45 0.35 -0.82</direction>
+      <attenuation>
+        <range>1000</range>
+        <constant>0.9</constant>
+        <linear>0.01</linear>
+        <quadratic>0.001</quadratic>
+      </attenuation>
+    </light>
+
+    <!-- Secondary Ambient Fill Light -->
+    <light type="directional" name="sky_fill">
+      <cast_shadows>false</cast_shadows>
+      <pose>0 0 100 0 0 0</pose>
+      <diffuse>0.25 0.30 0.38 1</diffuse>
+      <specular>0.05 0.05 0.05 1</specular>
+      <direction>0 0 -1</direction>
+    </light>
+
+    <!-- Main Ground Terrain with Mixed Grass & Soil -->
+    <model name="main_terrain">
+      <static>true</static>
+      <link name="ground_link">
+        <collision name="ground_col">
+          <geometry><plane><normal>0 0 1</normal><size>350 350</size></plane></geometry>
+          <surface>
+            <friction>
+              <ode><mu>1.0</mu><mu2>1.0</mu2></ode>
+            </friction>
+          </surface>
+        </collision>
+        <visual name="ground_vis">
+          <geometry><plane><normal>0 0 1</normal><size>350 350</size></plane></geometry>
+          <material>
+            <ambient>0.28 0.38 0.22 1</ambient>
+            <diffuse>0.32 0.45 0.25 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- 3D Undulating Hills (Terrain Elevation) -->
+    <!-- North Hill Ridge (Sector Bravo/Charlie boundary) -->
+    <model name="north_ridge_hill">
+      <static>true</static>
+      <pose>60 75 0 0 0 0.3</pose>
+      <link name="hill_link">
+        <collision name="col"><geometry><cylinder><radius>35</radius><length>14</length></cylinder></geometry></collision>
+        <visual name="vis">
+          <geometry><cylinder><radius>35</radius><length>14</length></cylinder></geometry>
+          <material>
+            <ambient>0.25 0.32 0.2 1</ambient>
+            <diffuse>0.28 0.37 0.22 1</diffuse>
+            <specular>0.02 0.02 0.02 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- East Outpost Bluff (Sector Delta) -->
+    <model name="east_outpost_bluff">
+      <static>true</static>
+      <pose>80 -25 0 0 0 -0.2</pose>
+      <link name="bluff_link">
+        <collision name="col"><geometry><cylinder><radius>28</radius><length>11</length></cylinder></geometry></collision>
+        <visual name="vis">
+          <geometry><cylinder><radius>28</radius><length>11</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.32 0.25 1</ambient>
+            <diffuse>0.42 0.38 0.3 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- West Forest Mound -->
+    <model name="west_forest_mound">
+      <static>true</static>
+      <pose>-75 45 0 0 0 0.5</pose>
+      <link name="mound_link">
+        <collision name="col"><geometry><cylinder><radius>25</radius><length>8</length></cylinder></geometry></collision>
+        <visual name="vis">
+          <geometry><cylinder><radius>25</radius><length>8</length></cylinder></geometry>
+          <material>
+            <ambient>0.22 0.32 0.18 1</ambient>
+            <diffuse>0.25 0.38 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- River Bed and Real 3D Water Channel (Sector Charlie) -->
+    <model name="river_channel">
+      <static>true</static>
+      <pose>0 60 0.05 0 0 0.05</pose>
+      <link name="water_link">
+        <collision name="water_col">
+          <geometry><box><size>260 16 0.1</size></box></geometry>
+        </collision>
+        <visual name="water_surface">
+          <geometry><box><size>260 16 0.1</size></box></geometry>
+          <material>
+            <ambient>0.05 0.25 0.38 0.85</ambient>
+            <diffuse>0.1 0.45 0.6 0.85</diffuse>
+            <specular>0.85 0.9 0.95 1</specular>
+          </material>
+        </visual>
+        <!-- Riverbank Sand / Silt Left -->
+        <visual name="riverbank_north">
+          <pose>0 9 0.05 0 0 0</pose>
+          <geometry><box><size>260 2.5 0.2</size></box></geometry>
+          <material>
+            <ambient>0.4 0.35 0.25 1</ambient>
+            <diffuse>0.48 0.42 0.3 1</diffuse>
+          </material>
+        </visual>
+        <!-- Riverbank Sand / Silt Right -->
+        <visual name="riverbank_south">
+          <pose>0 -9 0.05 0 0 0</pose>
+          <geometry><box><size>260 2.5 0.2</size></box></geometry>
+          <material>
+            <ambient>0.4 0.35 0.25 1</ambient>
+            <diffuse>0.48 0.42 0.3 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Concrete Truss Bridge Crossing River -->
+    <model name="river_bridge">
+      <static>true</static>
+      <pose>0 60 0.4 0 0 1.5708</pose>
+      <link name="bridge_link">
+        <collision name="deck_col"><geometry><box><size>18 6 0.5</size></box></geometry></collision>
+        <visual name="deck_vis">
+          <geometry><box><size>18 6 0.5</size></box></geometry>
+          <material>
+            <ambient>0.3 0.3 0.32 1</ambient>
+            <diffuse>0.4 0.4 0.42 1</diffuse>
+          </material>
+        </visual>
+        <!-- Bridge Piers -->
+        <visual name="pier_1">
+          <pose>6 0 -1.0 0 0 0</pose>
+          <geometry><cylinder><radius>0.6</radius><length>2.0</length></cylinder></geometry>
+          <material><ambient>0.35 0.35 0.35 1</ambient></material>
+        </visual>
+        <visual name="pier_2">
+          <pose>-6 0 -1.0 0 0 0</pose>
+          <geometry><cylinder><radius>0.6</radius><length>2.0</length></cylinder></geometry>
+          <material><ambient>0.35 0.35 0.35 1</ambient></material>
+        </visual>
+        <!-- Safety Railings -->
+        <visual name="railing_left">
+          <pose>0 2.8 0.6 0 0 0</pose>
+          <geometry><box><size>18 0.2 0.8</size></box></geometry>
+          <material><ambient>0.8 0.7 0.1 1</ambient><diffuse>0.9 0.8 0.1 1</diffuse></material>
+        </visual>
+        <visual name="railing_right">
+          <pose>0 -2.8 0.6 0 0 0</pose>
+          <geometry><box><size>18 0.2 0.8</size></box></geometry>
+          <material><ambient>0.8 0.7 0.1 1</ambient><diffuse>0.9 0.8 0.1 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Main Roadways -->
+    <model name="main_road_north">
+      <static>true</static>
+      <pose>0 15 0.02 0 0 0</pose>
+      <link name="road_link">
+        <visual name="asphalt">
+          <geometry><box><size>6 90 0.03</size></box></geometry>
+          <material>
+            <ambient>0.2 0.2 0.22 1</ambient>
+            <diffuse>0.25 0.25 0.28 1</diffuse>
+          </material>
+        </visual>
+        <visual name="dash_line">
+          <geometry><box><size>0.2 90 0.04</size></box></geometry>
+          <material>
+            <ambient>0.8 0.7 0.1 1</ambient>
+            <diffuse>0.9 0.8 0.1 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="camp_perimeter_road">
+      <static>true</static>
+      <pose>0 -25 0.02 0 0 1.5708</pose>
+      <link name="road_link">
+        <visual name="asphalt">
+          <geometry><box><size>6 90 0.03</size></box></geometry>
+          <material><ambient>0.2 0.2 0.22 1</ambient><diffuse>0.25 0.25 0.28 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ============================================== -->
+    <!-- FICTIONAL MILITARY SURVEILLANCE CAMP           -->
+    <!-- ============================================== -->
+
+    <!-- Central Operations HQ & Mission Control -->
+    <model name="ops_hq_building">
+      <static>true</static>
+      <pose>-15 -25 3.5 0 0 0</pose>
+      <link name="building_link">
+        <collision name="col"><geometry><box><size>18 12 7</size></box></geometry></collision>
+        <visual name="walls">
+          <geometry><box><size>18 12 7</size></box></geometry>
+          <material>
+            <ambient>0.4 0.42 0.45 1</ambient>
+            <diffuse>0.48 0.5 0.53 1</diffuse>
+          </material>
+        </visual>
+        <visual name="windows">
+          <pose>0 -6.05 1.5 0 0 0</pose>
+          <geometry><box><size>14 0.1 1.6</size></box></geometry>
+          <material><ambient>0.1 0.3 0.4 0.9</ambient><diffuse>0.2 0.5 0.7 0.9</diffuse><specular>0.8 0.8 0.9 1</specular></material>
+        </visual>
+        <visual name="radar_dome">
+          <pose>4 0 4.2 0 0 0</pose>
+          <geometry><sphere><radius>1.8</radius></sphere></geometry>
+          <material><ambient>0.85 0.85 0.85 1</ambient><diffuse>0.95 0.95 0.95 1</diffuse></material>
+        </visual>
+        <visual name="antenna_mast">
+          <pose>-5 3 6.0 0 0 0</pose>
+          <geometry><cylinder><radius>0.08</radius><length>5.0</length></cylinder></geometry>
+          <material><ambient>0.8 0.2 0.2 1</ambient><diffuse>0.9 0.2 0.2 1</diffuse></material>
+        </visual>
+        <visual name="antenna_dish">
+          <pose>-5 3 7.5 0 0.4 0.6</pose>
+          <geometry><cylinder><radius>1.2</radius><length>0.15</length></cylinder></geometry>
+          <material><ambient>0.9 0.9 0.9 1</ambient><diffuse>0.95 0.95 0.95 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Barracks & Accommodation Building -->
+    <model name="barracks_building">
+      <static>true</static>
+      <pose>-15 -45 2.5 0 0 0</pose>
+      <link name="barracks_link">
+        <collision name="col"><geometry><box><size>22 10 5</size></box></geometry></collision>
+        <visual name="walls">
+          <geometry><box><size>22 10 5</size></box></geometry>
+          <material>
+            <ambient>0.3 0.35 0.3 1</ambient>
+            <diffuse>0.38 0.44 0.38 1</diffuse>
+          </material>
+        </visual>
+        <visual name="roof">
+          <pose>0 0 2.8 0 0 0</pose>
+          <geometry><box><size>22.6 10.6 0.6</size></box></geometry>
+          <material><ambient>0.2 0.22 0.2 1</ambient><diffuse>0.25 0.27 0.25 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Drone Hangar & Maintenance Shed -->
+    <model name="drone_hangar">
+      <static>true</static>
+      <pose>25 -25 3.5 0 0 0</pose>
+      <link name="hangar_link">
+        <collision name="col"><geometry><box><size>18 16 7</size></box></geometry></collision>
+        <visual name="structure">
+          <geometry><box><size>18 16 7</size></box></geometry>
+          <material>
+            <ambient>0.35 0.36 0.38 1</ambient>
+            <diffuse>0.45 0.46 0.48 1</diffuse>
+          </material>
+        </visual>
+        <visual name="hangar_bay_door">
+          <pose>0 8.05 -0.5 0 0 0</pose>
+          <geometry><box><size>12 0.1 5.5</size></box></geometry>
+          <material>
+            <ambient>0.7 0.65 0.1 1</ambient>
+            <diffuse>0.85 0.78 0.15 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Dedicated Drone Landing Pad & Autonomous Charging Station (HOME STATION) -->
+    <model name="drone_landing_pad_home">
+      <static>true</static>
+      <pose>0 0 0.12 0 0 0</pose>
+      <link name="pad_link">
+        <collision name="pad_col">
+          <geometry><box><size>6.0 6.0 0.24</size></box></geometry>
+        </collision>
+        <visual name="pad_base">
+          <geometry><box><size>6.0 6.0 0.24</size></box></geometry>
+          <material>
+            <ambient>0.22 0.22 0.25 1</ambient>
+            <diffuse>0.28 0.28 0.32 1</diffuse>
+          </material>
+        </visual>
+        <visual name="yellow_border">
+          <pose>0 0 0.125 0 0 0</pose>
+          <geometry><box><size>5.8 5.8 0.01</size></box></geometry>
+          <material>
+            <ambient>0.9 0.75 0.05 1</ambient>
+            <diffuse>0.95 0.82 0.1 1</diffuse>
+          </material>
+        </visual>
+        <visual name="inner_deck">
+          <pose>0 0 0.13 0 0 0</pose>
+          <geometry><box><size>5.0 5.0 0.01</size></box></geometry>
+          <material>
+            <ambient>0.15 0.15 0.18 1</ambient>
+            <diffuse>0.18 0.18 0.22 1</diffuse>
+          </material>
+        </visual>
+        <!-- 'H' Marking -->
+        <visual name="h_bar_left">
+          <pose>-0.9 0 0.135 0 0 0</pose>
+          <geometry><box><size>0.45 2.6 0.01</size></box></geometry>
+          <material><ambient>0.95 0.95 0.95 1</ambient><diffuse>1 1 1 1</diffuse></material>
+        </visual>
+        <visual name="h_bar_right">
+          <pose>0.9 0 0.135 0 0 0</pose>
+          <geometry><box><size>0.45 2.6 0.01</size></box></geometry>
+          <material><ambient>0.95 0.95 0.95 1</ambient><diffuse>1 1 1 1</diffuse></material>
+        </visual>
+        <visual name="h_crossbar">
+          <pose>0 0 0.135 0 0 0</pose>
+          <geometry><box><size>1.8 0.45 0.01</size></box></geometry>
+          <material><ambient>0.95 0.95 0.95 1</ambient><diffuse>1 1 1 1</diffuse></material>
+        </visual>
+        <visual name="charging_ring">
+          <pose>0 0 0.138 0 0 0</pose>
+          <geometry><cylinder><radius>1.8</radius><length>0.005</length></cylinder></geometry>
+          <material>
+            <ambient>0.0 0.8 0.9 0.4</ambient>
+            <diffuse>0.1 0.9 1.0 0.4</diffuse>
+            <emissive>0.0 0.3 0.4 1</emissive>
+          </material>
+        </visual>
+        <visual name="charger_terminal">
+          <pose>2.6 2.6 0.6 0 0 0</pose>
+          <geometry><box><size>0.5 0.5 1.2</size></box></geometry>
+          <material>
+            <ambient>0.2 0.6 0.2 1</ambient>
+            <diffuse>0.2 0.8 0.2 1</diffuse>
+            <emissive>0.1 0.4 0.1 1</emissive>
+          </material>
+        </visual>
+        <!-- Corner Green Alignment Beacons -->
+        <visual name="beacon_ne"><pose>2.7 2.7 0.15 0 0 0</pose><geometry><cylinder><radius>0.08</radius><length>0.1</length></cylinder></geometry><material><ambient>0 1 0 1</ambient><diffuse>0 1 0 1</diffuse><emissive>0 0.8 0 1</emissive></material></visual>
+        <visual name="beacon_nw"><pose>-2.7 2.7 0.15 0 0 0</pose><geometry><cylinder><radius>0.08</radius><length>0.1</length></cylinder></geometry><material><ambient>0 1 0 1</ambient><diffuse>0 1 0 1</diffuse><emissive>0 0.8 0 1</emissive></material></visual>
+        <visual name="beacon_se"><pose>2.7 -2.7 0.15 0 0 0</pose><geometry><cylinder><radius>0.08</radius><length>0.1</length></cylinder></geometry><material><ambient>0 1 0 1</ambient><diffuse>0 1 0 1</diffuse><emissive>0 0.8 0 1</emissive></material></visual>
+        <visual name="beacon_sw"><pose>-2.7 -2.7 0.15 0 0 0</pose><geometry><cylinder><radius>0.08</radius><length>0.1</length></cylinder></geometry><material><ambient>0 1 0 1</ambient><diffuse>0 1 0 1</diffuse><emissive>0 0.8 0 1</emissive></material></visual>
+      </link>
+    </model>
+
+    <!-- Elevated Perimeter Watchtower (Guard Post) -->
+    <model name="perimeter_watchtower">
+      <static>true</static>
+      <pose>38 20 6.0 0 0 0</pose>
+      <link name="tower_link">
+        <collision name="col"><geometry><box><size>4.5 4.5 12.0</size></box></geometry></collision>
+        <visual name="leg_1"><pose>1.8 1.8 -3.0 0 0 0</pose><geometry><cylinder><radius>0.2</radius><length>6.0</length></cylinder></geometry><material><ambient>0.2 0.2 0.25 1</ambient></material></visual>
+        <visual name="leg_2"><pose>-1.8 1.8 -3.0 0 0 0</pose><geometry><cylinder><radius>0.2</radius><length>6.0</length></cylinder></geometry><material><ambient>0.2 0.2 0.25 1</ambient></material></visual>
+        <visual name="leg_3"><pose>1.8 -1.8 -3.0 0 0 0</pose><geometry><cylinder><radius>0.2</radius><length>6.0</length></cylinder></geometry><material><ambient>0.2 0.2 0.25 1</ambient></material></visual>
+        <visual name="leg_4"><pose>-1.8 -1.8 -3.0 0 0 0</pose><geometry><cylinder><radius>0.2</radius><length>6.0</length></cylinder></geometry><material><ambient>0.2 0.2 0.25 1</ambient></material></visual>
+        <visual name="cabin">
+          <pose>0 0 1.5 0 0 0</pose>
+          <geometry><box><size>4.2 4.2 3.0</size></box></geometry>
+          <material><ambient>0.3 0.35 0.38 1</ambient><diffuse>0.4 0.45 0.48 1</diffuse></material>
+        </visual>
+        <visual name="cabin_windows">
+          <pose>0 0 1.8 0 0 0</pose>
+          <geometry><box><size>4.3 4.3 1.0</size></box></geometry>
+          <material><ambient>0.1 0.3 0.5 0.8</ambient><diffuse>0.2 0.5 0.7 0.8</diffuse><specular>0.9 0.9 1.0 1</specular></material>
+        </visual>
+        <visual name="searchlight">
+          <pose>0 2.2 3.2 0 0.3 1.5708</pose>
+          <geometry><cylinder><radius>0.35</radius><length>0.5</length></cylinder></geometry>
+          <material><ambient>1 1 0.8 1</ambient><emissive>1 1 0.8 1</emissive></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Vehicle Parking & Motor Pool with Patrol Trucks -->
+    <model name="patrol_vehicle_parked">
+      <static>true</static>
+      <pose>25 -42 0.9 0 0 0</pose>
+      <link name="truck_link">
+        <collision name="truck_col"><geometry><box><size>5.2 2.2 1.8</size></box></geometry></collision>
+        <visual name="truck_body">
+          <geometry><box><size>5.2 2.2 1.4</size></box></geometry>
+          <material><ambient>0.18 0.25 0.18 1</ambient><diffuse>0.25 0.35 0.25 1</diffuse></material>
+        </visual>
+        <visual name="truck_cabin">
+          <pose>-0.6 0 0.7 0 0 0</pose>
+          <geometry><box><size>2.4 2.1 0.8</size></box></geometry>
+          <material><ambient>0.15 0.2 0.15 1</ambient><diffuse>0.2 0.3 0.2 1</diffuse></material>
+        </visual>
+        <visual name="windshield">
+          <pose>0.6 0 0.7 0 0.35 0</pose>
+          <geometry><box><size>0.1 1.9 0.7</size></box></geometry>
+          <material><ambient>0.1 0.2 0.3 0.9</ambient><specular>0.8 0.8 0.9 1</specular></material>
+        </visual>
+        <visual name="w_fl"><pose>1.5 1.15 -0.45 1.5708 0 0</pose><geometry><cylinder><radius>0.45</radius><length>0.3</length></cylinder></geometry><material><ambient>0.1 0.1 0.1 1</ambient></material></visual>
+        <visual name="w_fr"><pose>1.5 -1.15 -0.45 1.5708 0 0</pose><geometry><cylinder><radius>0.45</radius><length>0.3</length></cylinder></geometry><material><ambient>0.1 0.1 0.1 1</ambient></material></visual>
+        <visual name="w_rl"><pose>-1.5 1.15 -0.45 1.5708 0 0</pose><geometry><cylinder><radius>0.45</radius><length>0.3</length></cylinder></geometry><material><ambient>0.1 0.1 0.1 1</ambient></material></visual>
+        <visual name="w_rr"><pose>-1.5 -1.15 -0.45 1.5708 0 0</pose><geometry><cylinder><radius>0.45</radius><length>0.3</length></cylinder></geometry><material><ambient>0.1 0.1 0.1 1</ambient></material></visual>
+      </link>
+    </model>
+
+    <!-- Camp Perimeter Security Fence (110m x 80m enclosure) -->
+    <model name="fence_north_left"><static>true</static><pose>-25 28 1.4 0 0 0</pose><link name="l"><collision name="c"><geometry><box><size>40 0.15 2.8</size></box></geometry></collision><visual name="v"><geometry><box><size>40 0.15 2.8</size></box></geometry><material><ambient>0.3 0.3 0.35 0.7</ambient><diffuse>0.5 0.5 0.55 0.7</diffuse></material></visual></link></model>
+    <model name="fence_north_right"><static>true</static><pose>25 28 1.4 0 0 0</pose><link name="l"><collision name="c"><geometry><box><size>40 0.15 2.8</size></box></geometry></collision><visual name="v"><geometry><box><size>40 0.15 2.8</size></box></geometry><material><ambient>0.3 0.3 0.35 0.7</ambient><diffuse>0.5 0.5 0.55 0.7</diffuse></material></visual></link></model>
+    <model name="fence_main_gate">
+      <static>true</static>
+      <pose>0 28 1.5 0 0 0</pose>
+      <link name="gate_link">
+        <visual name="gate_pillar_left"><pose>-4.8 0 0 0 0 0</pose><geometry><box><size>0.8 0.8 3.0</size></box></geometry><material><ambient>0.7 0.6 0.1 1</ambient></material></visual>
+        <visual name="gate_pillar_right"><pose>4.8 0 0 0 0 0</pose><geometry><box><size>0.8 0.8 3.0</size></box></geometry><material><ambient>0.7 0.6 0.1 1</ambient></material></visual>
+        <visual name="barrier_arm"><pose>0 0 -0.2 0 1.5708 0</pose><geometry><cylinder><radius>0.08</radius><length>9.0</length></cylinder></geometry><material><ambient>0.9 0.1 0.1 1</ambient><diffuse>1.0 0.1 0.1 1</diffuse></material></visual>
+      </link>
+    </model>
+    <model name="fence_south"><static>true</static><pose>0 -55 1.4 0 0 0</pose><link name="l"><collision name="c"><geometry><box><size>90 0.15 2.8</size></box></geometry></collision><visual name="v"><geometry><box><size>90 0.15 2.8</size></box></geometry><material><ambient>0.3 0.3 0.35 0.7</ambient><diffuse>0.5 0.5 0.55 0.7</diffuse></material></visual></link></model>
+    <model name="fence_west"><static>true</static><pose>-45 -13.5 1.4 0 0 1.5708</pose><link name="l"><collision name="c"><geometry><box><size>83 0.15 2.8</size></box></geometry></collision><visual name="v"><geometry><box><size>83 0.15 2.8</size></box></geometry><material><ambient>0.3 0.3 0.35 0.7</ambient><diffuse>0.5 0.5 0.55 0.7</diffuse></material></visual></link></model>
+    <model name="fence_east"><static>true</static><pose>45 -13.5 1.4 0 0 1.5708</pose><link name="l"><collision name="c"><geometry><box><size>83 0.15 2.8</size></box></geometry></collision><visual name="v"><geometry><box><size>83 0.15 2.8</size></box></geometry><material><ambient>0.3 0.3 0.35 0.7</ambient><diffuse>0.5 0.5 0.55 0.7</diffuse></material></visual></link></model>
+
+    <!-- Floodlight Towers -->
+    <model name="floodlight_nw"><static>true</static><pose>-42 25 4 0 0 0</pose><link name="l"><visual name="v"><geometry><cylinder><radius>0.15</radius><length>8</length></cylinder></geometry><material><ambient>0.7 0.7 0.7 1</ambient></material></visual><visual name="head"><pose>0 0 4.1 0 0 0</pose><geometry><box><size>0.6 0.8 0.4</size></box></geometry><material><ambient>1 1 0.9 1</ambient><emissive>1 1 0.9 1</emissive></material></visual></link></model>
+    <model name="floodlight_ne"><static>true</static><pose>42 25 4 0 0 0</pose><link name="l"><visual name="v"><geometry><cylinder><radius>0.15</radius><length>8</length></cylinder></geometry><material><ambient>0.7 0.7 0.7 1</ambient></material></visual><visual name="head"><pose>0 0 4.1 0 0 0</pose><geometry><box><size>0.6 0.8 0.4</size></box></geometry><material><ambient>1 1 0.9 1</ambient><emissive>1 1 0.9 1</emissive></material></visual></link></model>
+
+    <!-- ================================================================= -->
+    <!-- INTERNATIONAL BORDER LINE: COUNTRY A (HOME) vs COUNTRY B (FOREIGN) -->
+    <!-- ================================================================= -->
+    <model name="international_border_line">
+      <static>true</static>
+      <pose>0 32 0.03 0 0 0</pose>
+      <link name="border_line_link">
+        <!-- High-Visibility Yellow & Black Hazard Stripe Ground Demarcation Ribbon (210m x 1.2m) -->
+        <visual name="demarcation_ribbon">
+          <geometry><box><size>210 1.2 0.04</size></box></geometry>
+          <material>
+            <ambient>0.95 0.85 0.05 1</ambient>
+            <diffuse>1.0 0.9 0.1 1</diffuse>
+            <specular>0.4 0.4 0.1 1</specular>
+          </material>
+        </visual>
+        <!-- Center Demarcation Boundary Stripe (White) -->
+        <visual name="center_stripe">
+          <pose>0 0 0.025 0 0 0</pose>
+          <geometry><box><size>210 0.25 0.02</size></box></geometry>
+          <material><ambient>1 1 1 1</ambient><diffuse>1 1 1 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Concrete International Border Posts with Red/White Sovereign Identification Bands -->
+    <!-- Border Post 1 (-80m West) -->
+    <model name="border_post_west_80"><static>true</static><pose>-80 32 1.2 0 0 0</pose><link name="l">
+      <collision name="c"><geometry><box><size>0.6 0.6 2.4</size></box></geometry></collision>
+      <visual name="base"><geometry><box><size>0.6 0.6 2.4</size></box></geometry><material><ambient>0.9 0.9 0.9 1</ambient><diffuse>0.95 0.95 0.95 1</diffuse></material></visual>
+      <visual name="red_band"><pose>0 0 0.4 0 0 0</pose><geometry><box><size>0.64 0.64 0.5</size></box></geometry><material><ambient>0.85 0.1 0.1 1</ambient><diffuse>0.9 0.1 0.1 1</diffuse></material></visual>
+      <visual name="beacon"><pose>0 0 1.3 0 0 0</pose><geometry><cylinder><radius>0.12</radius><length>0.25</length></cylinder></geometry><material><ambient>1 0.6 0 1</ambient><emissive>1 0.6 0 1</emissive></material></visual>
+    </link></model>
+
+    <!-- Border Post 2 (-40m West) -->
+    <model name="border_post_west_40"><static>true</static><pose>-40 32 1.2 0 0 0</pose><link name="l">
+      <collision name="c"><geometry><box><size>0.6 0.6 2.4</size></box></geometry></collision>
+      <visual name="base"><geometry><box><size>0.6 0.6 2.4</size></box></geometry><material><ambient>0.9 0.9 0.9 1</ambient><diffuse>0.95 0.95 0.95 1</diffuse></material></visual>
+      <visual name="red_band"><pose>0 0 0.4 0 0 0</pose><geometry><box><size>0.64 0.64 0.5</size></box></geometry><material><ambient>0.85 0.1 0.1 1</ambient><diffuse>0.9 0.1 0.1 1</diffuse></material></visual>
+      <visual name="beacon"><pose>0 0 1.3 0 0 0</pose><geometry><cylinder><radius>0.12</radius><length>0.25</length></cylinder></geometry><material><ambient>1 0.6 0 1</ambient><emissive>1 0.6 0 1</emissive></material></visual>
+    </link></model>
+
+    <!-- Border Checkpoint Gate Central Post Left (-3m) -->
+    <model name="border_post_gate_left"><static>true</static><pose>-3.5 32 1.5 0 0 0</pose><link name="l">
+      <collision name="c"><geometry><box><size>0.7 0.7 3.0</size></box></geometry></collision>
+      <visual name="base"><geometry><box><size>0.7 0.7 3.0</size></box></geometry><material><ambient>0.2 0.25 0.3 1</ambient><diffuse>0.3 0.35 0.4 1</diffuse></material></visual>
+      <visual name="sign_home"><pose>0 -0.4 0.6 0 0 0</pose><geometry><box><size>1.6 0.08 0.8</size></box></geometry><material><ambient>0.1 0.4 0.8 1</ambient><diffuse>0.1 0.5 0.9 1</diffuse></material></visual>
+      <visual name="beacon"><pose>0 0 1.6 0 0 0</pose><geometry><cylinder><radius>0.14</radius><length>0.25</length></cylinder></geometry><material><ambient>0 0.8 1 1</ambient><emissive>0 0.8 1 1</emissive></material></visual>
+    </link></model>
+
+    <!-- Border Checkpoint Gate Central Post Right (+3m) -->
+    <model name="border_post_gate_right"><static>true</static><pose>3.5 32 1.5 0 0 0</pose><link name="l">
+      <collision name="c"><geometry><box><size>0.7 0.7 3.0</size></box></geometry></collision>
+      <visual name="base"><geometry><box><size>0.7 0.7 3.0</size></box></geometry><material><ambient>0.2 0.25 0.3 1</ambient><diffuse>0.3 0.35 0.4 1</diffuse></material></visual>
+      <visual name="sign_foreign"><pose>0 0.4 0.6 0 0 0</pose><geometry><box><size>1.6 0.08 0.8</size></box></geometry><material><ambient>0.8 0.2 0.1 1</ambient><diffuse>0.9 0.2 0.1 1</diffuse></material></visual>
+      <visual name="beacon"><pose>0 0 1.6 0 0 0</pose><geometry><cylinder><radius>0.14</radius><length>0.25</length></cylinder></geometry><material><ambient>1 0.3 0.1 1</ambient><emissive>1 0.3 0.1 1</emissive></material></visual>
+    </link></model>
+
+    <!-- Border Post 3 (+40m East) -->
+    <model name="border_post_east_40"><static>true</static><pose>40 32 1.2 0 0 0</pose><link name="l">
+      <collision name="c"><geometry><box><size>0.6 0.6 2.4</size></box></geometry></collision>
+      <visual name="base"><geometry><box><size>0.6 0.6 2.4</size></box></geometry><material><ambient>0.9 0.9 0.9 1</ambient><diffuse>0.95 0.95 0.95 1</diffuse></material></visual>
+      <visual name="red_band"><pose>0 0 0.4 0 0 0</pose><geometry><box><size>0.64 0.64 0.5</size></box></geometry><material><ambient>0.85 0.1 0.1 1</ambient><diffuse>0.9 0.1 0.1 1</diffuse></material></visual>
+      <visual name="beacon"><pose>0 0 1.3 0 0 0</pose><geometry><cylinder><radius>0.12</radius><length>0.25</length></cylinder></geometry><material><ambient>1 0.6 0 1</ambient><emissive>1 0.6 0 1</emissive></material></visual>
+    </link></model>
+
+    <!-- Border Post 4 (+80m East) -->
+    <model name="border_post_east_80"><static>true</static><pose>80 32 1.2 0 0 0</pose><link name="l">
+      <collision name="c"><geometry><box><size>0.6 0.6 2.4</size></box></geometry></collision>
+      <visual name="base"><geometry><box><size>0.6 0.6 2.4</size></box></geometry><material><ambient>0.9 0.9 0.9 1</ambient><diffuse>0.95 0.95 0.95 1</diffuse></material></visual>
+      <visual name="red_band"><pose>0 0 0.4 0 0 0</pose><geometry><box><size>0.64 0.64 0.5</size></box></geometry><material><ambient>0.85 0.1 0.1 1</ambient><diffuse>0.9 0.1 0.1 1</diffuse></material></visual>
+      <visual name="beacon"><pose>0 0 1.3 0 0 0</pose><geometry><cylinder><radius>0.12</radius><length>0.25</length></cylinder></geometry><material><ambient>1 0.6 0 1</ambient><emissive>1 0.6 0 1</emissive></material></visual>
+    </link></model>
+
+    <!-- ================================================================= -->
+    <!-- 9 SIMULATED PEOPLE MODELS (DISTRIBUTED ACROSS ALL ZONES)          -->
+    <!-- ================================================================= -->
+
+    <!-- Person 1: MAN - Home Sovereign Territory Patrol Guard (Zone Alpha - North Gate) -->
+    <model name="person_man_patrol_guard">
+      <pose>6 20 0.9 0 0 1.57</pose>
+      <link name="human_link">
+        <collision name="col"><geometry><cylinder><radius>0.28</radius><length>1.8</length></cylinder></geometry></collision>
+        <visual name="head"><pose>0 0 0.75 0 0 0</pose><geometry><sphere><radius>0.14</radius></sphere></geometry><material><ambient>0.85 0.68 0.55 1</ambient><diffuse>0.85 0.68 0.55 1</diffuse></material></visual>
+        <visual name="guard_cap"><pose>0 0.02 0.84 0 0 0</pose><geometry><cylinder><radius>0.15</radius><length>0.08</length></cylinder></geometry><material><ambient>0.1 0.15 0.25 1</ambient></material></visual>
+        <visual name="torso"><pose>0 0 0.25 0 0 0</pose><geometry><box><size>0.38 0.52 0.75</size></box></geometry><material><ambient>1.0 0.45 0.0 1</ambient><diffuse>1.0 0.5 0.05 1</diffuse></material></visual>
+        <visual name="leg_left"><pose>0 0.16 -0.45 0 0 0</pose><geometry><cylinder><radius>0.1</radius><length>0.7</length></cylinder></geometry><material><ambient>0.12 0.15 0.22 1</ambient></material></visual>
+        <visual name="leg_right"><pose>0 -0.16 -0.45 0 0 0</pose><geometry><cylinder><radius>0.1</radius><length>0.7</length></cylinder></geometry><material><ambient>0.12 0.15 0.22 1</ambient></material></visual>
+      </link>
+    </model>
+
+    <!-- Person 2: WOMAN - Home Base Logistics Officer (Zone Alpha - South HQ Building) -->
+    <model name="person_woman_logistics_officer">
+      <pose>-10 -25 0.9 0 0 0.0</pose>
+      <link name="human_link">
+        <collision name="col"><geometry><cylinder><radius>0.26</radius><length>1.72</length></cylinder></geometry></collision>
+        <visual name="head"><pose>0 0 0.73 0 0 0</pose><geometry><sphere><radius>0.13</radius></sphere></geometry><material><ambient>0.88 0.72 0.6 1</ambient><diffuse>0.88 0.72 0.6 1</diffuse></material></visual>
+        <visual name="hair"><pose>-0.05 0 0.74 0 0 0</pose><geometry><sphere><radius>0.14</radius></sphere></geometry><material><ambient>0.15 0.1 0.05 1</ambient></material></visual>
+        <visual name="torso"><pose>0 0 0.25 0 0 0</pose><geometry><box><size>0.34 0.46 0.72</size></box></geometry><material><ambient>0.15 0.45 0.85 1</ambient><diffuse>0.2 0.55 0.95 1</diffuse></material></visual>
+        <visual name="leg_left"><pose>0 0.14 -0.45 0 0 0</pose><geometry><cylinder><radius>0.09</radius><length>0.7</length></cylinder></geometry><material><ambient>0.2 0.2 0.25 1</ambient></material></visual>
+        <visual name="leg_right"><pose>0 -0.14 -0.45 0 0 0</pose><geometry><cylinder><radius>0.09</radius><length>0.7</length></cylinder></geometry><material><ambient>0.2 0.2 0.25 1</ambient></material></visual>
+      </link>
+    </model>
+
+    <!-- Person 3: WOMAN - Home Sovereign Border Patrol Officer (Zone Alpha - Border Checkpoint) -->
+    <model name="person_woman_border_officer">
+      <pose>-15 28 0.9 0 0 0.8</pose>
+      <link name="human_link">
+        <collision name="col"><geometry><cylinder><radius>0.26</radius><length>1.75</length></cylinder></geometry></collision>
+        <visual name="head"><pose>0 0 0.73 0 0 0</pose><geometry><sphere><radius>0.13</radius></sphere></geometry><material><ambient>0.88 0.72 0.6 1</ambient><diffuse>0.88 0.72 0.6 1</diffuse></material></visual>
+        <visual name="hair"><pose>-0.05 0 0.74 0 0 0</pose><geometry><sphere><radius>0.14</radius></sphere></geometry><material><ambient>0.2 0.12 0.06 1</ambient></material></visual>
+        <visual name="jacket"><pose>0 0 0.25 0 0 0</pose><geometry><box><size>0.32 0.44 0.72</size></box></geometry><material><ambient>0.18 0.35 0.18 1</ambient><diffuse>0.22 0.42 0.22 1</diffuse></material></visual>
+        <visual name="utility_belt"><pose>0 0 -0.06 0 0 0</pose><geometry><box><size>0.34 0.46 0.1</size></box></geometry><material><ambient>0.08 0.08 0.08 1</ambient></material></visual>
+        <visual name="leg_left"><pose>0 0.14 -0.45 0 0 0</pose><geometry><cylinder><radius>0.09</radius><length>0.7</length></cylinder></geometry><material><ambient>0.15 0.25 0.15 1</ambient></material></visual>
+        <visual name="leg_right"><pose>0 -0.14 -0.45 0 0 0</pose><geometry><cylinder><radius>0.09</radius><length>0.7</length></cylinder></geometry><material><ambient>0.15 0.25 0.15 1</ambient></material></visual>
+      </link>
+    </model>
+
+    <!-- Person 4: MAN - Home Outpost Sentry (Zone Delta - Eastern Outpost Ridge Watchtower) -->
+    <model name="person_man_outpost_sentry">
+      <pose>65 -15 0.9 0 0 -1.57</pose>
+      <link name="human_link">
+        <collision name="col"><geometry><cylinder><radius>0.28</radius><length>1.8</length></cylinder></geometry></collision>
+        <visual name="head"><pose>0 0 0.75 0 0 0</pose><geometry><sphere><radius>0.14</radius></sphere></geometry><material><ambient>0.85 0.68 0.55 1</ambient></material></visual>
+        <visual name="beret"><pose>0 0.02 0.82 0 0 0</pose><geometry><cylinder><radius>0.15</radius><length>0.06</length></cylinder></geometry><material><ambient>0.1 0.35 0.2 1</ambient></material></visual>
+        <visual name="torso"><pose>0 0 0.25 0 0 0</pose><geometry><box><size>0.36 0.5 0.75</size></box></geometry><material><ambient>0.25 0.35 0.22 1</ambient><diffuse>0.32 0.44 0.28 1</diffuse></material></visual>
+        <visual name="leg_left"><pose>0 0.16 -0.45 0 0 0</pose><geometry><cylinder><radius>0.1</radius><length>0.7</length></cylinder></geometry><material><ambient>0.15 0.2 0.15 1</ambient></material></visual>
+        <visual name="leg_right"><pose>0 -0.16 -0.45 0 0 0</pose><geometry><cylinder><radius>0.1</radius><length>0.7</length></cylinder></geometry><material><ambient>0.15 0.2 0.15 1</ambient></material></visual>
+      </link>
+    </model>
+
+    <!-- Person 5: MAN - Foreign Border Crosser (International Border Road Corridor) -->
+    <model name="person_man_foreign_crosser">
+      <pose>15 38 0.9 0 0 -1.57</pose>
+      <link name="human_link">
+        <collision name="col"><geometry><cylinder><radius>0.28</radius><length>1.8</length></cylinder></geometry></collision>
+        <visual name="head"><pose>0 0 0.75 0 0 0</pose><geometry><sphere><radius>0.14</radius></sphere></geometry><material><ambient>0.82 0.65 0.52 1</ambient></material></visual>
+        <visual name="jacket"><pose>0 0 0.25 0 0 0</pose><geometry><box><size>0.36 0.5 0.75</size></box></geometry><material><ambient>0.18 0.18 0.2 1</ambient><diffuse>0.25 0.25 0.28 1</diffuse></material></visual>
+        <visual name="backpack"><pose>-0.2 0 0.3 0 0 0</pose><geometry><box><size>0.2 0.32 0.4</size></box></geometry><material><ambient>0.35 0.25 0.15 1</ambient></material></visual>
+        <visual name="pants"><pose>0 0 -0.45 0 0 0</pose><geometry><cylinder><radius>0.15</radius><length>0.7</length></cylinder></geometry><material><ambient>0.1 0.1 0.12 1</ambient></material></visual>
+      </link>
+    </model>
+
+    <!-- Person 6: MAN - Foreign Forest Hiker (Zone Bravo - Western Deep Pine Forest) -->
+    <model name="person_man_forest_hiker">
+      <pose>-65 50 0.9 0 0 0.4</pose>
+      <link name="human_link">
+        <collision name="col"><geometry><cylinder><radius>0.28</radius><length>1.8</length></cylinder></geometry></collision>
+        <visual name="head"><pose>0 0 0.75 0 0 0</pose><geometry><sphere><radius>0.14</radius></sphere></geometry><material><ambient>0.82 0.65 0.52 1</ambient></material></visual>
+        <visual name="jacket"><pose>0 0 0.25 0 0 0</pose><geometry><box><size>0.36 0.5 0.75</size></box></geometry><material><ambient>0.45 0.28 0.12 1</ambient><diffuse>0.55 0.35 0.18 1</diffuse></material></visual>
+        <visual name="pack"><pose>-0.22 0 0.32 0 0 0</pose><geometry><box><size>0.22 0.34 0.45</size></box></geometry><material><ambient>0.15 0.3 0.2 1</ambient></material></visual>
+        <visual name="pants"><pose>0 0 -0.45 0 0 0</pose><geometry><cylinder><radius>0.15</radius><length>0.7</length></cylinder></geometry><material><ambient>0.25 0.28 0.2 1</ambient></material></visual>
+      </link>
+    </model>
+
+    <!-- Person 7: WOMAN - High Ground Observer (Sector Charlie - North Hill Elevation Bluff) -->
+    <model name="person_woman_foreign_observer">
+      <pose>58 74 0.9 0 0 -0.6</pose>
+      <link name="human_link">
+        <collision name="col"><geometry><cylinder><radius>0.26</radius><length>1.72</length></cylinder></geometry></collision>
+        <visual name="head"><pose>0 0 0.72 0 0 0</pose><geometry><sphere><radius>0.13</radius></sphere></geometry><material><ambient>0.86 0.7 0.58 1</ambient></material></visual>
+        <visual name="hair"><pose>-0.04 0 0.72 0 0 0</pose><geometry><sphere><radius>0.14</radius></sphere></geometry><material><ambient>0.5 0.2 0.1 1</ambient></material></visual>
+        <visual name="coat"><pose>0 0 0.22 0 0 0</pose><geometry><box><size>0.32 0.45 0.78</size></box></geometry><material><ambient>0.6 0.08 0.15 1</ambient><diffuse>0.75 0.1 0.2 1</diffuse></material></visual>
+        <visual name="leg_left"><pose>0 0.13 -0.45 0 0 0</pose><geometry><cylinder><radius>0.085</radius><length>0.7</length></cylinder></geometry><material><ambient>0.18 0.18 0.22 1</ambient></material></visual>
+        <visual name="leg_right"><pose>0 -0.13 -0.45 0 0 0</pose><geometry><cylinder><radius>0.085</radius><length>0.7</length></cylinder></geometry><material><ambient>0.18 0.18 0.22 1</ambient></material></visual>
+      </link>
+    </model>
+
+    <!-- Person 8: WOMAN - Foreign Riverbank Civilian (Sector Charlie - River Trail) -->
+    <model name="person_woman_riverbank_civilian">
+      <pose>42 56 0.9 0 0 -1.2</pose>
+      <link name="human_link">
+        <collision name="col"><geometry><cylinder><radius>0.26</radius><length>1.72</length></cylinder></geometry></collision>
+        <visual name="head"><pose>0 0 0.72 0 0 0</pose><geometry><sphere><radius>0.13</radius></sphere></geometry><material><ambient>0.85 0.68 0.55 1</ambient></material></visual>
+        <visual name="cap"><pose>0 0.02 0.8 0 0 0</pose><geometry><cylinder><radius>0.14</radius><length>0.06</length></cylinder></geometry><material><ambient>0.9 0.9 0.9 1</ambient></material></visual>
+        <visual name="jacket"><pose>0 0 0.24 0 0 0</pose><geometry><box><size>0.32 0.44 0.74</size></box></geometry><material><ambient>0.1 0.4 0.75 1</ambient><diffuse>0.15 0.5 0.9 1</diffuse></material></visual>
+        <visual name="leg_left"><pose>0 0.13 -0.45 0 0 0</pose><geometry><cylinder><radius>0.085</radius><length>0.7</length></cylinder></geometry><material><ambient>0.2 0.2 0.25 1</ambient></material></visual>
+        <visual name="leg_right"><pose>0 -0.13 -0.45 0 0 0</pose><geometry><cylinder><radius>0.085</radius><length>0.7</length></cylinder></geometry><material><ambient>0.2 0.2 0.25 1</ambient></material></visual>
+      </link>
+    </model>
+
+    <!-- Person 9: MAN - Foreign Sector Woodsman (Sector Charlie - Northern River Crossing) -->
+    <model name="person_man_foreign_woods">
+      <pose>-8 66 0.9 0 0 2.1</pose>
+      <link name="human_link">
+        <collision name="col"><geometry><cylinder><radius>0.28</radius><length>1.8</length></cylinder></geometry></collision>
+        <visual name="head"><pose>0 0 0.75 0 0 0</pose><geometry><sphere><radius>0.14</radius></sphere></geometry><material><ambient>0.82 0.66 0.52 1</ambient></material></visual>
+        <visual name="jacket"><pose>0 0 0.25 0 0 0</pose><geometry><box><size>0.36 0.5 0.75</size></box></geometry><material><ambient>0.12 0.38 0.18 1</ambient><diffuse>0.15 0.45 0.22 1</diffuse></material></visual>
+        <visual name="pants"><pose>0 0 -0.45 0 0 0</pose><geometry><cylinder><radius>0.15</radius><length>0.7</length></cylinder></geometry><material><ambient>0.15 0.15 0.18 1</ambient></material></visual>
+      </link>
+    </model>
+
+    <!-- ================================================================= -->
+    <!-- 4 WILDLIFE / ANIMALS (DISTRIBUTED ACROSS FORESTS, RIVERS & RIDGES)-->
+    <!-- ================================================================= -->
+
+    <!-- Animal 1: Wildlife Stag (Zone Bravo - Western Forest Clearing) -->
+    <model name="wildlife_deer_stag">
+      <pose>-55 42 0.7 0 0 0.8</pose>
+      <link name="animal_link">
+        <collision name="col"><geometry><box><size>1.6 0.6 1.4</size></box></geometry></collision>
+        <visual name="body"><geometry><box><size>1.3 0.5 0.65</size></box></geometry><material><ambient>0.55 0.32 0.15 1</ambient><diffuse>0.62 0.38 0.18 1</diffuse></material></visual>
+        <visual name="head"><pose>0.6 0 0.45 0 0.5 0</pose><geometry><cylinder><radius>0.16</radius><length>0.6</length></cylinder></geometry><material><ambient>0.55 0.32 0.15 1</ambient></material></visual>
+        <visual name="antlers"><pose>0.7 0 0.82 0 0 0</pose><geometry><box><size>0.12 0.65 0.4</size></box></geometry><material><ambient>0.8 0.75 0.65 1</ambient></material></visual>
+        <visual name="fl"><pose>0.45 0.2 -0.45 0 0 0</pose><geometry><cylinder><radius>0.05</radius><length>0.65</length></cylinder></geometry><material><ambient>0.4 0.25 0.1 1</ambient></material></visual>
+        <visual name="fr"><pose>0.45 -0.2 -0.45 0 0 0</pose><geometry><cylinder><radius>0.05</radius><length>0.65</length></cylinder></geometry><material><ambient>0.4 0.25 0.1 1</ambient></material></visual>
+        <visual name="rl"><pose>-0.45 0.2 -0.45 0 0 0</pose><geometry><cylinder><radius>0.05</radius><length>0.65</length></cylinder></geometry><material><ambient>0.4 0.25 0.1 1</ambient></material></visual>
+        <visual name="rr"><pose>-0.45 -0.2 -0.45 0 0 0</pose><geometry><cylinder><radius>0.05</radius><length>0.65</length></cylinder></geometry><material><ambient>0.4 0.25 0.1 1</ambient></material></visual>
+      </link>
+    </model>
+
+    <!-- Animal 2: Wildlife Doe (Zone Bravo - Upper Pine Woods) -->
+    <model name="wildlife_deer_doe">
+      <pose>-45 68 0.65 0 0 0.3</pose>
+      <link name="animal_link">
+        <collision name="col"><geometry><box><size>1.4 0.5 1.2</size></box></geometry></collision>
+        <visual name="body"><geometry><box><size>1.2 0.45 0.6</size></box></geometry><material><ambient>0.58 0.35 0.18 1</ambient><diffuse>0.65 0.4 0.2 1</diffuse></material></visual>
+        <visual name="head"><pose>0.55 0 0.2 0 0.7 0</pose><geometry><cylinder><radius>0.14</radius><length>0.55</length></cylinder></geometry><material><ambient>0.58 0.35 0.18 1</ambient></material></visual>
+        <visual name="fl"><pose>0.4 0.18 -0.42 0 0 0</pose><geometry><cylinder><radius>0.045</radius><length>0.6</length></cylinder></geometry><material><ambient>0.4 0.25 0.1 1</ambient></material></visual>
+        <visual name="fr"><pose>0.4 -0.18 -0.42 0 0 0</pose><geometry><cylinder><radius>0.045</radius><length>0.6</length></cylinder></geometry><material><ambient>0.4 0.25 0.1 1</ambient></material></visual>
+        <visual name="rl"><pose>-0.4 0.18 -0.42 0 0 0</pose><geometry><cylinder><radius>0.045</radius><length>0.6</length></cylinder></geometry><material><ambient>0.4 0.25 0.1 1</ambient></material></visual>
+        <visual name="rr"><pose>-0.4 -0.18 -0.42 0 0 0</pose><geometry><cylinder><radius>0.045</radius><length>0.6</length></cylinder></geometry><material><ambient>0.4 0.25 0.1 1</ambient></material></visual>
+      </link>
+    </model>
+
+    <!-- Animal 3: Wildlife Elk (Sector Charlie - Riverbank Wetlands) -->
+    <model name="wildlife_forest_elk">
+      <pose>-20 62 0.85 0 0 -0.5</pose>
+      <link name="animal_link">
+        <collision name="col"><geometry><box><size>1.9 0.7 1.7</size></box></geometry></collision>
+        <visual name="body"><geometry><box><size>1.6 0.6 0.8</size></box></geometry><material><ambient>0.4 0.24 0.12 1</ambient><diffuse>0.48 0.3 0.15 1</diffuse></material></visual>
+        <visual name="neck_head"><pose>0.7 0 0.5 0 0.45 0</pose><geometry><cylinder><radius>0.2</radius><length>0.75</length></cylinder></geometry><material><ambient>0.35 0.2 0.1 1</ambient></material></visual>
+        <visual name="antlers"><pose>0.85 0 0.95 0 0 0</pose><geometry><box><size>0.15 0.8 0.5</size></box></geometry><material><ambient>0.7 0.65 0.55 1</ambient></material></visual>
+        <visual name="fl"><pose>0.55 0.22 -0.5 0 0 0</pose><geometry><cylinder><radius>0.06</radius><length>0.75</length></cylinder></geometry><material><ambient>0.3 0.18 0.08 1</ambient></material></visual>
+        <visual name="fr"><pose>0.55 -0.22 -0.5 0 0 0</pose><geometry><cylinder><radius>0.06</radius><length>0.75</length></cylinder></geometry><material><ambient>0.3 0.18 0.08 1</ambient></material></visual>
+        <visual name="rl"><pose>-0.55 0.22 -0.5 0 0 0</pose><geometry><cylinder><radius>0.06</radius><length>0.75</length></cylinder></geometry><material><ambient>0.3 0.18 0.08 1</ambient></material></visual>
+        <visual name="rr"><pose>-0.55 -0.22 -0.5 0 0 0</pose><geometry><cylinder><radius>0.06</radius><length>0.75</length></cylinder></geometry><material><ambient>0.3 0.18 0.08 1</ambient></material></visual>
+      </link>
+    </model>
+
+    <!-- Animal 4: Wildlife Mountain Deer (Zone Delta - Eastern Outpost Ridge Bluff) -->
+    <model name="wildlife_mountain_deer">
+      <pose>72 5 0.7 0 0 -1.0</pose>
+      <link name="animal_link">
+        <collision name="col"><geometry><box><size>1.5 0.55 1.3</size></box></geometry></collision>
+        <visual name="body"><geometry><box><size>1.3 0.5 0.65</size></box></geometry><material><ambient>0.52 0.3 0.15 1</ambient><diffuse>0.6 0.35 0.18 1</diffuse></material></visual>
+        <visual name="head"><pose>0.55 0 0.35 0 0.5 0</pose><geometry><cylinder><radius>0.15</radius><length>0.58</length></cylinder></geometry><material><ambient>0.52 0.3 0.15 1</ambient></material></visual>
+        <visual name="antlers"><pose>0.65 0 0.7 0 0 0</pose><geometry><box><size>0.1 0.5 0.3</size></box></geometry><material><ambient>0.75 0.7 0.6 1</ambient></material></visual>
+        <visual name="fl"><pose>0.42 0.2 -0.45 0 0 0</pose><geometry><cylinder><radius>0.05</radius><length>0.65</length></cylinder></geometry><material><ambient>0.4 0.25 0.1 1</ambient></material></visual>
+        <visual name="fr"><pose>0.42 -0.2 -0.45 0 0 0</pose><geometry><cylinder><radius>0.05</radius><length>0.65</length></cylinder></geometry><material><ambient>0.4 0.25 0.1 1</ambient></material></visual>
+        <visual name="rl"><pose>-0.42 0.2 -0.45 0 0 0</pose><geometry><cylinder><radius>0.05</radius><length>0.65</length></cylinder></geometry><material><ambient>0.4 0.25 0.1 1</ambient></material></visual>
+        <visual name="rr"><pose>-0.42 -0.2 -0.45 0 0 0</pose><geometry><cylinder><radius>0.05</radius><length>0.65</length></cylinder></geometry><material><ambient>0.4 0.25 0.1 1</ambient></material></visual>
+      </link>
+    </model>
+
+    <!-- Moving Patrol Vehicle -->
+    <model name="moving_patrol_vehicle">
+      <pose>0 35 0.85 0 0 1.5708</pose>
+      <link name="chassis">
+        <collision name="col"><geometry><box><size>4.5 2.0 1.6</size></box></geometry></collision>
+        <visual name="hull"><geometry><box><size>4.5 2.0 1.1</size></box></geometry><material><ambient>0.65 0.65 0.65 1</ambient><diffuse>0.8 0.8 0.8 1</diffuse></material></visual>
+        <visual name="cabin"><pose>-0.4 0 0.6 0 0 0</pose><geometry><box><size>2.2 1.8 0.7</size></box></geometry><material><ambient>0.2 0.35 0.45 1</ambient></material></visual>
+        <visual name="emergency_lights"><pose>-0.4 0 1.05 0 0 0</pose><geometry><box><size>0.3 1.2 0.15</size></box></geometry><material><ambient>0.1 0.3 0.9 1</ambient><diffuse>0.1 0.4 1 1</diffuse><emissive>0.2 0.4 1 1</emissive></material></visual>
+        <visual name="w1"><pose>1.4 1.05 -0.4 1.5708 0 0</pose><geometry><cylinder><radius>0.4</radius><length>0.25</length></cylinder></geometry><material><ambient>0.1 0.1 0.1 1</ambient></material></visual>
+        <visual name="w2"><pose>1.4 -1.05 -0.4 1.5708 0 0</pose><geometry><cylinder><radius>0.4</radius><length>0.25</length></cylinder></geometry><material><ambient>0.1 0.1 0.1 1</ambient></material></visual>
+        <visual name="w3"><pose>-1.4 1.05 -0.4 1.5708 0 0</pose><geometry><cylinder><radius>0.4</radius><length>0.25</length></cylinder></geometry><material><ambient>0.1 0.1 0.1 1</ambient></material></visual>
+        <visual name="w4"><pose>-1.4 -1.05 -0.4 1.5708 0 0</pose><geometry><cylinder><radius>0.4</radius><length>0.25</length></cylinder></geometry><material><ambient>0.1 0.1 0.1 1</ambient></material></visual>
+      </link>
+    </model>
+
+    <!-- Environmental Hazard: Wildfire / Smoke Scenario (Sector Bravo) -->
+    <model name="hazard_wildfire">
+      <static>true</static>
+      <pose>-65 65 0.5 0 0 0</pose>
+      <link name="fire_link">
+        <visual name="flame_core">
+          <pose>0 0 1.2 0 0 0</pose>
+          <geometry><cone><radius>1.8</radius><length>2.8</length></cone></geometry>
+          <material>
+            <ambient>1.0 0.4 0.05 1</ambient>
+            <diffuse>1.0 0.5 0.05 1</diffuse>
+            <emissive>1.0 0.55 0.05 1</emissive>
+          </material>
+        </visual>
+        <visual name="flame_inner">
+          <pose>0 0 1.6 0 0 0</pose>
+          <geometry><cone><radius>1.1</radius><length>2.4</length></cone></geometry>
+          <material>
+            <ambient>1.0 0.85 0.1 1</ambient>
+            <diffuse>1.0 0.9 0.2 1</diffuse>
+            <emissive>1.0 0.9 0.2 1</emissive>
+          </material>
+        </visual>
+        <visual name="smoke_plume_1">
+          <pose>0.4 0.2 4.2 0 0 0</pose>
+          <geometry><sphere><radius>2.2</radius></sphere></geometry>
+          <material><ambient>0.18 0.18 0.18 0.85</ambient><diffuse>0.22 0.22 0.22 0.85</diffuse></material>
+        </visual>
+        <visual name="smoke_plume_2">
+          <pose>-0.3 0.6 7.5 0 0 0</pose>
+          <geometry><sphere><radius>3.2</radius></sphere></geometry>
+          <material><ambient>0.25 0.25 0.25 0.75</ambient><diffuse>0.3 0.3 0.3 0.75</diffuse></material>
+        </visual>
+        <visual name="smoke_plume_3">
+          <pose>0.8 1.2 11.8 0 0 0</pose>
+          <geometry><sphere><radius>4.5</radius></sphere></geometry>
+          <material><ambient>0.35 0.35 0.35 0.65</ambient><diffuse>0.4 0.4 0.4 0.65</diffuse></material>
+        </visual>
+        <light type="point" name="fire_glow">
+          <pose>0 0 2.0 0 0 0</pose>
+          <diffuse>1.0 0.45 0.1 1</diffuse>
+          <specular>0.8 0.3 0.05 1</specular>
+          <attenuation><range>25</range><constant>0.2</constant><linear>0.1</linear><quadratic>0.02</quadratic></attenuation>
+        </light>
+      </link>
+    </model>
+
+    <!-- Zone Boundary Visual Pylons -->
+    <model name="marker_zone_alpha"><static>true</static><pose>0 29 1.5 0 0 0</pose><link name="l"><visual name="v"><geometry><cylinder><radius>0.15</radius><length>3</length></cylinder></geometry><material><ambient>0.1 0.8 0.1 1</ambient><emissive>0.1 0.7 0.1 1</emissive></material></visual></link></model>
+    <model name="marker_zone_bravo"><static>true</static><pose>-50 50 2 0 0 0</pose><link name="l"><visual name="v"><geometry><cylinder><radius>0.15</radius><length>4</length></cylinder></geometry><material><ambient>0.1 0.6 0.9 1</ambient><emissive>0.1 0.5 0.9 1</emissive></material></visual></link></model>
+    <model name="marker_zone_charlie"><static>true</static><pose>0 65 2 0 0 0</pose><link name="l"><visual name="v"><geometry><cylinder><radius>0.15</radius><length>4</length></cylinder></geometry><material><ambient>0.9 0.7 0.1 1</ambient><emissive>0.9 0.7 0.1 1</emissive></material></visual></link></model>
+    <model name="marker_zone_delta"><static>true</static><pose>60 30 2 0 0 0</pose><link name="l"><visual name="v"><geometry><cylinder><radius>0.15</radius><length>4</length></cylinder></geometry><material><ambient>0.9 0.2 0.2 1</ambient><emissive>0.9 0.2 0.2 1</emissive></material></visual></link></model>
+
+    <!-- Natural Forests and Tree Clusters -->
+
+    <!-- Tree: pine_bravo_0 (Pine) -->
+    <model name="pine_bravo_0">
+      <static>true</static>
+      <pose>-46.63 26.50 0.00 0 0 1.40</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.45 0 0 0</pose>
+          <geometry><cylinder><radius>0.24</radius><length>2.90</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.45 0 0 0</pose>
+          <geometry><cylinder><radius>0.24</radius><length>2.90</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 4.05 0 0 0</pose>
+          <geometry><cone><radius>2.12</radius><length>2.90</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 5.60 0 0 0</pose>
+          <geometry><cone><radius>1.54</radius><length>2.32</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 6.95 0 0 0</pose>
+          <geometry><cone><radius>0.97</radius><length>1.74</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: pine_bravo_1 (Pine) -->
+    <model name="pine_bravo_1">
+      <static>true</static>
+      <pose>-40.81 65.60 0.00 0 0 0.55</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 2.00 0 0 0</pose>
+          <geometry><cylinder><radius>0.33</radius><length>4.01</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 2.00 0 0 0</pose>
+          <geometry><cylinder><radius>0.33</radius><length>4.01</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 5.61 0 0 0</pose>
+          <geometry><cone><radius>2.94</radius><length>4.01</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 7.74 0 0 0</pose>
+          <geometry><cone><radius>2.14</radius><length>3.20</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 9.61 0 0 0</pose>
+          <geometry><cone><radius>1.34</radius><length>2.40</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: pine_bravo_2 (Pine) -->
+    <model name="pine_bravo_2">
+      <static>true</static>
+      <pose>-59.68 26.79 0.00 0 0 3.17</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.40 0 0 0</pose>
+          <geometry><cylinder><radius>0.23</radius><length>2.79</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.40 0 0 0</pose>
+          <geometry><cylinder><radius>0.23</radius><length>2.79</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 3.91 0 0 0</pose>
+          <geometry><cone><radius>2.05</radius><length>2.79</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 5.40 0 0 0</pose>
+          <geometry><cone><radius>1.49</radius><length>2.23</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 6.70 0 0 0</pose>
+          <geometry><cone><radius>0.93</radius><length>1.68</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: pine_bravo_3 (Pine) -->
+    <model name="pine_bravo_3">
+      <static>true</static>
+      <pose>-83.41 36.93 0.00 0 0 3.42</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.78 0 0 0</pose>
+          <geometry><cylinder><radius>0.30</radius><length>3.57</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.78 0 0 0</pose>
+          <geometry><cylinder><radius>0.30</radius><length>3.57</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 5.00 0 0 0</pose>
+          <geometry><cone><radius>2.62</radius><length>3.57</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 6.90 0 0 0</pose>
+          <geometry><cone><radius>1.90</radius><length>2.86</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 8.57 0 0 0</pose>
+          <geometry><cone><radius>1.19</radius><length>2.14</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: pine_bravo_4 (Pine) -->
+    <model name="pine_bravo_4">
+      <static>true</static>
+      <pose>-71.77 60.36 0.00 0 0 0.04</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.93 0 0 0</pose>
+          <geometry><cylinder><radius>0.32</radius><length>3.86</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.93 0 0 0</pose>
+          <geometry><cylinder><radius>0.32</radius><length>3.86</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 5.40 0 0 0</pose>
+          <geometry><cone><radius>2.83</radius><length>3.86</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 7.46 0 0 0</pose>
+          <geometry><cone><radius>2.06</radius><length>3.09</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 9.26 0 0 0</pose>
+          <geometry><cone><radius>1.29</radius><length>2.31</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: pine_bravo_5 (Pine) -->
+    <model name="pine_bravo_5">
+      <static>true</static>
+      <pose>-36.65 66.89 0.00 0 0 0.98</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.51 0 0 0</pose>
+          <geometry><cylinder><radius>0.25</radius><length>3.01</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.51 0 0 0</pose>
+          <geometry><cylinder><radius>0.25</radius><length>3.01</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 4.22 0 0 0</pose>
+          <geometry><cone><radius>2.21</radius><length>3.01</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 5.82 0 0 0</pose>
+          <geometry><cone><radius>1.61</radius><length>2.41</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 7.23 0 0 0</pose>
+          <geometry><cone><radius>1.00</radius><length>1.81</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: pine_bravo_6 (Pine) -->
+    <model name="pine_bravo_6">
+      <static>true</static>
+      <pose>-27.57 45.20 0.00 0 0 0.61</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.28 0 0 0</pose>
+          <geometry><cylinder><radius>0.21</radius><length>2.57</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.28 0 0 0</pose>
+          <geometry><cylinder><radius>0.21</radius><length>2.57</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 3.59 0 0 0</pose>
+          <geometry><cone><radius>1.88</radius><length>2.57</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 4.96 0 0 0</pose>
+          <geometry><cone><radius>1.37</radius><length>2.05</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 6.16 0 0 0</pose>
+          <geometry><cone><radius>0.86</radius><length>1.54</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: pine_bravo_7 (Pine) -->
+    <model name="pine_bravo_7">
+      <static>true</static>
+      <pose>-34.15 61.22 0.00 0 0 4.58</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.93 0 0 0</pose>
+          <geometry><cylinder><radius>0.32</radius><length>3.85</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.93 0 0 0</pose>
+          <geometry><cylinder><radius>0.32</radius><length>3.85</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 5.39 0 0 0</pose>
+          <geometry><cone><radius>2.83</radius><length>3.85</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 7.45 0 0 0</pose>
+          <geometry><cone><radius>2.05</radius><length>3.08</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 9.25 0 0 0</pose>
+          <geometry><cone><radius>1.28</radius><length>2.31</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: pine_bravo_8 (Pine) -->
+    <model name="pine_bravo_8">
+      <static>true</static>
+      <pose>-52.83 83.39 0.00 0 0 3.47</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.54 0 0 0</pose>
+          <geometry><cylinder><radius>0.26</radius><length>3.08</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.54 0 0 0</pose>
+          <geometry><cylinder><radius>0.26</radius><length>3.08</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 4.31 0 0 0</pose>
+          <geometry><cone><radius>2.26</radius><length>3.08</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 5.96 0 0 0</pose>
+          <geometry><cone><radius>1.64</radius><length>2.47</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 7.40 0 0 0</pose>
+          <geometry><cone><radius>1.03</radius><length>1.85</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: pine_bravo_9 (Pine) -->
+    <model name="pine_bravo_9">
+      <static>true</static>
+      <pose>-35.24 62.11 0.00 0 0 3.63</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.98 0 0 0</pose>
+          <geometry><cylinder><radius>0.33</radius><length>3.95</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.98 0 0 0</pose>
+          <geometry><cylinder><radius>0.33</radius><length>3.95</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 5.53 0 0 0</pose>
+          <geometry><cone><radius>2.90</radius><length>3.95</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 7.64 0 0 0</pose>
+          <geometry><cone><radius>2.11</radius><length>3.16</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 9.48 0 0 0</pose>
+          <geometry><cone><radius>1.32</radius><length>2.37</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: pine_bravo_10 (Pine) -->
+    <model name="pine_bravo_10">
+      <static>true</static>
+      <pose>-42.73 27.75 0.00 0 0 1.82</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.41 0 0 0</pose>
+          <geometry><cylinder><radius>0.23</radius><length>2.81</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.41 0 0 0</pose>
+          <geometry><cylinder><radius>0.23</radius><length>2.81</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 3.93 0 0 0</pose>
+          <geometry><cone><radius>2.06</radius><length>2.81</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 5.43 0 0 0</pose>
+          <geometry><cone><radius>1.50</radius><length>2.25</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 6.74 0 0 0</pose>
+          <geometry><cone><radius>0.94</radius><length>1.69</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: pine_bravo_11 (Pine) -->
+    <model name="pine_bravo_11">
+      <static>true</static>
+      <pose>-80.21 38.97 0.00 0 0 1.75</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.29 0 0 0</pose>
+          <geometry><cylinder><radius>0.22</radius><length>2.58</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.29 0 0 0</pose>
+          <geometry><cylinder><radius>0.22</radius><length>2.58</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 3.61 0 0 0</pose>
+          <geometry><cone><radius>1.89</radius><length>2.58</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 4.99 0 0 0</pose>
+          <geometry><cone><radius>1.38</radius><length>2.07</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 6.20 0 0 0</pose>
+          <geometry><cone><radius>0.86</radius><length>1.55</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: pine_bravo_12 (Pine) -->
+    <model name="pine_bravo_12">
+      <static>true</static>
+      <pose>-46.86 46.89 0.00 0 0 1.32</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.53 0 0 0</pose>
+          <geometry><cylinder><radius>0.26</radius><length>3.07</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.53 0 0 0</pose>
+          <geometry><cylinder><radius>0.26</radius><length>3.07</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 4.29 0 0 0</pose>
+          <geometry><cone><radius>2.25</radius><length>3.07</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 5.93 0 0 0</pose>
+          <geometry><cone><radius>1.64</radius><length>2.45</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 7.36 0 0 0</pose>
+          <geometry><cone><radius>1.02</radius><length>1.84</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: pine_bravo_13 (Pine) -->
+    <model name="pine_bravo_13">
+      <static>true</static>
+      <pose>-68.98 81.20 0.00 0 0 3.83</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.78 0 0 0</pose>
+          <geometry><cylinder><radius>0.30</radius><length>3.57</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.78 0 0 0</pose>
+          <geometry><cylinder><radius>0.30</radius><length>3.57</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 4.99 0 0 0</pose>
+          <geometry><cone><radius>2.62</radius><length>3.57</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 6.90 0 0 0</pose>
+          <geometry><cone><radius>1.90</radius><length>2.85</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 8.56 0 0 0</pose>
+          <geometry><cone><radius>1.19</radius><length>2.14</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: pine_bravo_14 (Pine) -->
+    <model name="pine_bravo_14">
+      <static>true</static>
+      <pose>-74.73 68.75 0.00 0 0 2.38</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.35 0 0 0</pose>
+          <geometry><cylinder><radius>0.22</radius><length>2.69</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.35 0 0 0</pose>
+          <geometry><cylinder><radius>0.22</radius><length>2.69</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 3.77 0 0 0</pose>
+          <geometry><cone><radius>1.98</radius><length>2.69</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 5.21 0 0 0</pose>
+          <geometry><cone><radius>1.44</radius><length>2.16</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 6.47 0 0 0</pose>
+          <geometry><cone><radius>0.90</radius><length>1.62</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: pine_bravo_15 (Pine) -->
+    <model name="pine_bravo_15">
+      <static>true</static>
+      <pose>-25.63 63.40 0.00 0 0 4.30</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.70 0 0 0</pose>
+          <geometry><cylinder><radius>0.28</radius><length>3.40</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.70 0 0 0</pose>
+          <geometry><cylinder><radius>0.28</radius><length>3.40</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 4.76 0 0 0</pose>
+          <geometry><cone><radius>2.50</radius><length>3.40</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 6.58 0 0 0</pose>
+          <geometry><cone><radius>1.81</radius><length>2.72</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 8.17 0 0 0</pose>
+          <geometry><cone><radius>1.13</radius><length>2.04</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: pine_bravo_16 (Pine) -->
+    <model name="pine_bravo_16">
+      <static>true</static>
+      <pose>-34.43 71.56 0.00 0 0 0.20</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.41 0 0 0</pose>
+          <geometry><cylinder><radius>0.23</radius><length>2.81</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.41 0 0 0</pose>
+          <geometry><cylinder><radius>0.23</radius><length>2.81</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 3.94 0 0 0</pose>
+          <geometry><cone><radius>2.06</radius><length>2.81</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 5.44 0 0 0</pose>
+          <geometry><cone><radius>1.50</radius><length>2.25</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 6.75 0 0 0</pose>
+          <geometry><cone><radius>0.94</radius><length>1.69</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: pine_bravo_17 (Pine) -->
+    <model name="pine_bravo_17">
+      <static>true</static>
+      <pose>-66.07 41.06 0.00 0 0 5.92</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.39 0 0 0</pose>
+          <geometry><cylinder><radius>0.23</radius><length>2.78</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.39 0 0 0</pose>
+          <geometry><cylinder><radius>0.23</radius><length>2.78</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 3.89 0 0 0</pose>
+          <geometry><cone><radius>2.04</radius><length>2.78</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 5.37 0 0 0</pose>
+          <geometry><cone><radius>1.48</radius><length>2.22</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 6.67 0 0 0</pose>
+          <geometry><cone><radius>0.93</radius><length>1.67</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: pine_bravo_18 (Pine) -->
+    <model name="pine_bravo_18">
+      <static>true</static>
+      <pose>-32.42 43.88 0.00 0 0 2.48</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.79 0 0 0</pose>
+          <geometry><cylinder><radius>0.30</radius><length>3.58</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.79 0 0 0</pose>
+          <geometry><cylinder><radius>0.30</radius><length>3.58</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 5.01 0 0 0</pose>
+          <geometry><cone><radius>2.63</radius><length>3.58</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 6.92 0 0 0</pose>
+          <geometry><cone><radius>1.91</radius><length>2.86</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 8.59 0 0 0</pose>
+          <geometry><cone><radius>1.19</radius><length>2.15</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: pine_bravo_19 (Pine) -->
+    <model name="pine_bravo_19">
+      <static>true</static>
+      <pose>-30.13 52.53 0.00 0 0 1.55</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.44 0 0 0</pose>
+          <geometry><cylinder><radius>0.24</radius><length>2.88</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.44 0 0 0</pose>
+          <geometry><cylinder><radius>0.24</radius><length>2.88</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 4.03 0 0 0</pose>
+          <geometry><cone><radius>2.11</radius><length>2.88</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 5.56 0 0 0</pose>
+          <geometry><cone><radius>1.53</radius><length>2.30</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 6.90 0 0 0</pose>
+          <geometry><cone><radius>0.96</radius><length>1.73</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: pine_bravo_20 (Pine) -->
+    <model name="pine_bravo_20">
+      <static>true</static>
+      <pose>-51.32 40.76 0.00 0 0 5.64</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.73 0 0 0</pose>
+          <geometry><cylinder><radius>0.29</radius><length>3.45</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.73 0 0 0</pose>
+          <geometry><cylinder><radius>0.29</radius><length>3.45</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 4.83 0 0 0</pose>
+          <geometry><cone><radius>2.53</radius><length>3.45</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 6.67 0 0 0</pose>
+          <geometry><cone><radius>1.84</radius><length>2.76</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 8.29 0 0 0</pose>
+          <geometry><cone><radius>1.15</radius><length>2.07</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: pine_bravo_21 (Pine) -->
+    <model name="pine_bravo_21">
+      <static>true</static>
+      <pose>-61.04 38.16 0.00 0 0 3.20</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 2.10 0 0 0</pose>
+          <geometry><cylinder><radius>0.35</radius><length>4.20</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 2.10 0 0 0</pose>
+          <geometry><cylinder><radius>0.35</radius><length>4.20</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 5.87 0 0 0</pose>
+          <geometry><cone><radius>3.08</radius><length>4.20</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 8.11 0 0 0</pose>
+          <geometry><cone><radius>2.24</radius><length>3.36</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 10.07 0 0 0</pose>
+          <geometry><cone><radius>1.40</radius><length>2.52</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: pine_bravo_22 (Pine) -->
+    <model name="pine_bravo_22">
+      <static>true</static>
+      <pose>-79.55 27.83 0.00 0 0 3.94</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.30 0 0 0</pose>
+          <geometry><cylinder><radius>0.22</radius><length>2.60</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.30 0 0 0</pose>
+          <geometry><cylinder><radius>0.22</radius><length>2.60</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 3.64 0 0 0</pose>
+          <geometry><cone><radius>1.90</radius><length>2.60</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 5.02 0 0 0</pose>
+          <geometry><cone><radius>1.39</radius><length>2.08</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 6.23 0 0 0</pose>
+          <geometry><cone><radius>0.87</radius><length>1.56</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: pine_bravo_23 (Pine) -->
+    <model name="pine_bravo_23">
+      <static>true</static>
+      <pose>-37.48 50.33 0.00 0 0 2.40</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.26 0 0 0</pose>
+          <geometry><cylinder><radius>0.21</radius><length>2.51</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.26 0 0 0</pose>
+          <geometry><cylinder><radius>0.21</radius><length>2.51</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 3.52 0 0 0</pose>
+          <geometry><cone><radius>1.84</radius><length>2.51</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 4.86 0 0 0</pose>
+          <geometry><cone><radius>1.34</radius><length>2.01</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 6.03 0 0 0</pose>
+          <geometry><cone><radius>0.84</radius><length>1.51</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: pine_bravo_24 (Pine) -->
+    <model name="pine_bravo_24">
+      <static>true</static>
+      <pose>-25.23 56.75 0.00 0 0 5.41</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 2.07 0 0 0</pose>
+          <geometry><cylinder><radius>0.35</radius><length>4.15</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 2.07 0 0 0</pose>
+          <geometry><cylinder><radius>0.35</radius><length>4.15</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 5.81 0 0 0</pose>
+          <geometry><cone><radius>3.04</radius><length>4.15</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 8.02 0 0 0</pose>
+          <geometry><cone><radius>2.21</radius><length>3.32</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 9.96 0 0 0</pose>
+          <geometry><cone><radius>1.38</radius><length>2.49</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: pine_bravo_25 (Pine) -->
+    <model name="pine_bravo_25">
+      <static>true</static>
+      <pose>-84.31 68.24 0.00 0 0 3.37</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.81 0 0 0</pose>
+          <geometry><cylinder><radius>0.30</radius><length>3.63</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.81 0 0 0</pose>
+          <geometry><cylinder><radius>0.30</radius><length>3.63</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 5.08 0 0 0</pose>
+          <geometry><cone><radius>2.66</radius><length>3.63</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 7.01 0 0 0</pose>
+          <geometry><cone><radius>1.93</radius><length>2.90</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 8.70 0 0 0</pose>
+          <geometry><cone><radius>1.21</radius><length>2.18</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: pine_bravo_26 (Pine) -->
+    <model name="pine_bravo_26">
+      <static>true</static>
+      <pose>-68.99 63.46 0.00 0 0 2.73</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.30 0 0 0</pose>
+          <geometry><cylinder><radius>0.22</radius><length>2.60</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.30 0 0 0</pose>
+          <geometry><cylinder><radius>0.22</radius><length>2.60</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 3.64 0 0 0</pose>
+          <geometry><cone><radius>1.91</radius><length>2.60</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 5.03 0 0 0</pose>
+          <geometry><cone><radius>1.39</radius><length>2.08</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 6.24 0 0 0</pose>
+          <geometry><cone><radius>0.87</radius><length>1.56</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: pine_bravo_27 (Pine) -->
+    <model name="pine_bravo_27">
+      <static>true</static>
+      <pose>-57.78 82.23 0.00 0 0 1.65</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.99 0 0 0</pose>
+          <geometry><cylinder><radius>0.33</radius><length>3.98</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.99 0 0 0</pose>
+          <geometry><cylinder><radius>0.33</radius><length>3.98</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 5.57 0 0 0</pose>
+          <geometry><cone><radius>2.92</radius><length>3.98</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 7.69 0 0 0</pose>
+          <geometry><cone><radius>2.12</radius><length>3.18</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 9.54 0 0 0</pose>
+          <geometry><cone><radius>1.33</radius><length>2.39</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: pine_bravo_28 (Pine) -->
+    <model name="pine_bravo_28">
+      <static>true</static>
+      <pose>-54.96 35.72 0.00 0 0 5.47</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 2.02 0 0 0</pose>
+          <geometry><cylinder><radius>0.34</radius><length>4.04</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 2.02 0 0 0</pose>
+          <geometry><cylinder><radius>0.34</radius><length>4.04</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 5.66 0 0 0</pose>
+          <geometry><cone><radius>2.96</radius><length>4.04</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 7.82 0 0 0</pose>
+          <geometry><cone><radius>2.16</radius><length>3.23</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 9.70 0 0 0</pose>
+          <geometry><cone><radius>1.35</radius><length>2.43</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: pine_bravo_29 (Pine) -->
+    <model name="pine_bravo_29">
+      <static>true</static>
+      <pose>-67.09 63.34 0.00 0 0 0.96</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.75 0 0 0</pose>
+          <geometry><cylinder><radius>0.29</radius><length>3.50</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.75 0 0 0</pose>
+          <geometry><cylinder><radius>0.29</radius><length>3.50</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 4.89 0 0 0</pose>
+          <geometry><cone><radius>2.56</radius><length>3.50</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 6.76 0 0 0</pose>
+          <geometry><cone><radius>1.86</radius><length>2.80</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 8.39 0 0 0</pose>
+          <geometry><cone><radius>1.17</radius><length>2.10</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: pine_bravo_30 (Pine) -->
+    <model name="pine_bravo_30">
+      <static>true</static>
+      <pose>-39.25 57.36 0.00 0 0 3.33</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.90 0 0 0</pose>
+          <geometry><cylinder><radius>0.32</radius><length>3.80</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.90 0 0 0</pose>
+          <geometry><cylinder><radius>0.32</radius><length>3.80</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 5.32 0 0 0</pose>
+          <geometry><cone><radius>2.79</radius><length>3.80</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 7.35 0 0 0</pose>
+          <geometry><cone><radius>2.03</radius><length>3.04</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 9.12 0 0 0</pose>
+          <geometry><cone><radius>1.27</radius><length>2.28</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: pine_bravo_31 (Pine) -->
+    <model name="pine_bravo_31">
+      <static>true</static>
+      <pose>-84.97 44.45 0.00 0 0 5.83</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.22 0 0 0</pose>
+          <geometry><cylinder><radius>0.20</radius><length>2.44</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.22 0 0 0</pose>
+          <geometry><cylinder><radius>0.20</radius><length>2.44</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 3.41 0 0 0</pose>
+          <geometry><cone><radius>1.79</radius><length>2.44</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 4.71 0 0 0</pose>
+          <geometry><cone><radius>1.30</radius><length>1.95</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 5.84 0 0 0</pose>
+          <geometry><cone><radius>0.81</radius><length>1.46</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: pine_bravo_32 (Pine) -->
+    <model name="pine_bravo_32">
+      <static>true</static>
+      <pose>-32.28 74.90 0.00 0 0 0.36</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.48 0 0 0</pose>
+          <geometry><cylinder><radius>0.25</radius><length>2.95</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.48 0 0 0</pose>
+          <geometry><cylinder><radius>0.25</radius><length>2.95</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 4.13 0 0 0</pose>
+          <geometry><cone><radius>2.17</radius><length>2.95</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 5.71 0 0 0</pose>
+          <geometry><cone><radius>1.58</radius><length>2.36</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 7.09 0 0 0</pose>
+          <geometry><cone><radius>0.98</radius><length>1.77</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: pine_bravo_33 (Pine) -->
+    <model name="pine_bravo_33">
+      <static>true</static>
+      <pose>-32.32 81.82 0.00 0 0 3.05</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.28 0 0 0</pose>
+          <geometry><cylinder><radius>0.21</radius><length>2.55</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.28 0 0 0</pose>
+          <geometry><cylinder><radius>0.21</radius><length>2.55</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 3.58 0 0 0</pose>
+          <geometry><cone><radius>1.87</radius><length>2.55</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 4.94 0 0 0</pose>
+          <geometry><cone><radius>1.36</radius><length>2.04</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 6.13 0 0 0</pose>
+          <geometry><cone><radius>0.85</radius><length>1.53</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: pine_bravo_34 (Pine) -->
+    <model name="pine_bravo_34">
+      <static>true</static>
+      <pose>-80.85 70.64 0.00 0 0 0.81</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.89 0 0 0</pose>
+          <geometry><cylinder><radius>0.31</radius><length>3.78</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.89 0 0 0</pose>
+          <geometry><cylinder><radius>0.31</radius><length>3.78</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 5.29 0 0 0</pose>
+          <geometry><cone><radius>2.77</radius><length>3.78</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 7.31 0 0 0</pose>
+          <geometry><cone><radius>2.02</radius><length>3.02</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 9.07 0 0 0</pose>
+          <geometry><cone><radius>1.26</radius><length>2.27</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: tree_charlie_0 (Deciduous) -->
+    <model name="tree_charlie_0">
+      <static>true</static>
+      <pose>58.76 62.49 0.00 0 0 5.48</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.29 0 0 0</pose>
+          <geometry><cylinder><radius>0.26</radius><length>2.58</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.29 0 0 0</pose>
+          <geometry><cylinder><radius>0.26</radius><length>2.58</length></cylinder></geometry>
+          <material>
+            <ambient>0.3 0.2 0.1 1</ambient>
+            <diffuse>0.38 0.25 0.14 1</diffuse>
+          </material>
+        </visual>
+        <visual name="canopy_vis">
+          <pose>0 0 4.08 0 0 0</pose>
+          <geometry><sphere><radius>2.15</radius></sphere></geometry>
+          <material>
+            <ambient>0.15 0.35 0.12 1</ambient>
+            <diffuse>0.22 0.52 0.18 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: tree_charlie_1 (Pine) -->
+    <model name="tree_charlie_1">
+      <static>true</static>
+      <pose>56.16 45.59 0.00 0 0 4.58</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.54 0 0 0</pose>
+          <geometry><cylinder><radius>0.26</radius><length>3.07</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.54 0 0 0</pose>
+          <geometry><cylinder><radius>0.26</radius><length>3.07</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 4.30 0 0 0</pose>
+          <geometry><cone><radius>2.25</radius><length>3.07</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 5.94 0 0 0</pose>
+          <geometry><cone><radius>1.64</radius><length>2.46</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 7.37 0 0 0</pose>
+          <geometry><cone><radius>1.02</radius><length>1.84</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: tree_charlie_2 (Deciduous) -->
+    <model name="tree_charlie_2">
+      <static>true</static>
+      <pose>45.06 50.59 0.00 0 0 4.08</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.95 0 0 0</pose>
+          <geometry><cylinder><radius>0.39</radius><length>3.89</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.95 0 0 0</pose>
+          <geometry><cylinder><radius>0.39</radius><length>3.89</length></cylinder></geometry>
+          <material>
+            <ambient>0.3 0.2 0.1 1</ambient>
+            <diffuse>0.38 0.25 0.14 1</diffuse>
+          </material>
+        </visual>
+        <visual name="canopy_vis">
+          <pose>0 0 6.16 0 0 0</pose>
+          <geometry><sphere><radius>3.24</radius></sphere></geometry>
+          <material>
+            <ambient>0.15 0.35 0.12 1</ambient>
+            <diffuse>0.22 0.52 0.18 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: tree_charlie_3 (Pine) -->
+    <model name="tree_charlie_3">
+      <static>true</static>
+      <pose>56.91 60.88 0.00 0 0 1.41</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.16 0 0 0</pose>
+          <geometry><cylinder><radius>0.19</radius><length>2.32</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.16 0 0 0</pose>
+          <geometry><cylinder><radius>0.19</radius><length>2.32</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 3.24 0 0 0</pose>
+          <geometry><cone><radius>1.70</radius><length>2.32</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 4.48 0 0 0</pose>
+          <geometry><cone><radius>1.24</radius><length>1.85</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 5.56 0 0 0</pose>
+          <geometry><cone><radius>0.77</radius><length>1.39</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: tree_charlie_4 (Deciduous) -->
+    <model name="tree_charlie_4">
+      <static>true</static>
+      <pose>51.90 64.42 0.00 0 0 1.38</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.26 0 0 0</pose>
+          <geometry><cylinder><radius>0.25</radius><length>2.51</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.26 0 0 0</pose>
+          <geometry><cylinder><radius>0.25</radius><length>2.51</length></cylinder></geometry>
+          <material>
+            <ambient>0.3 0.2 0.1 1</ambient>
+            <diffuse>0.38 0.25 0.14 1</diffuse>
+          </material>
+        </visual>
+        <visual name="canopy_vis">
+          <pose>0 0 3.98 0 0 0</pose>
+          <geometry><sphere><radius>2.10</radius></sphere></geometry>
+          <material>
+            <ambient>0.15 0.35 0.12 1</ambient>
+            <diffuse>0.22 0.52 0.18 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: tree_charlie_5 (Pine) -->
+    <model name="tree_charlie_5">
+      <static>true</static>
+      <pose>38.55 66.56 0.00 0 0 5.69</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.26 0 0 0</pose>
+          <geometry><cylinder><radius>0.21</radius><length>2.51</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.26 0 0 0</pose>
+          <geometry><cylinder><radius>0.21</radius><length>2.51</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 3.52 0 0 0</pose>
+          <geometry><cone><radius>1.84</radius><length>2.51</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 4.86 0 0 0</pose>
+          <geometry><cone><radius>1.34</radius><length>2.01</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 6.03 0 0 0</pose>
+          <geometry><cone><radius>0.84</radius><length>1.51</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: tree_charlie_6 (Deciduous) -->
+    <model name="tree_charlie_6">
+      <static>true</static>
+      <pose>77.98 38.54 0.00 0 0 4.20</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.26 0 0 0</pose>
+          <geometry><cylinder><radius>0.25</radius><length>2.53</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.26 0 0 0</pose>
+          <geometry><cylinder><radius>0.25</radius><length>2.53</length></cylinder></geometry>
+          <material>
+            <ambient>0.3 0.2 0.1 1</ambient>
+            <diffuse>0.38 0.25 0.14 1</diffuse>
+          </material>
+        </visual>
+        <visual name="canopy_vis">
+          <pose>0 0 4.00 0 0 0</pose>
+          <geometry><sphere><radius>2.11</radius></sphere></geometry>
+          <material>
+            <ambient>0.15 0.35 0.12 1</ambient>
+            <diffuse>0.22 0.52 0.18 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: tree_charlie_7 (Pine) -->
+    <model name="tree_charlie_7">
+      <static>true</static>
+      <pose>45.71 41.62 0.00 0 0 3.59</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.89 0 0 0</pose>
+          <geometry><cylinder><radius>0.32</radius><length>3.78</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.89 0 0 0</pose>
+          <geometry><cylinder><radius>0.32</radius><length>3.78</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 5.30 0 0 0</pose>
+          <geometry><cone><radius>2.77</radius><length>3.78</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 7.32 0 0 0</pose>
+          <geometry><cone><radius>2.02</radius><length>3.03</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 9.08 0 0 0</pose>
+          <geometry><cone><radius>1.26</radius><length>2.27</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: tree_charlie_8 (Deciduous) -->
+    <model name="tree_charlie_8">
+      <static>true</static>
+      <pose>58.63 74.23 0.00 0 0 1.20</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.78 0 0 0</pose>
+          <geometry><cylinder><radius>0.36</radius><length>3.55</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.78 0 0 0</pose>
+          <geometry><cylinder><radius>0.36</radius><length>3.55</length></cylinder></geometry>
+          <material>
+            <ambient>0.3 0.2 0.1 1</ambient>
+            <diffuse>0.38 0.25 0.14 1</diffuse>
+          </material>
+        </visual>
+        <visual name="canopy_vis">
+          <pose>0 0 5.63 0 0 0</pose>
+          <geometry><sphere><radius>2.96</radius></sphere></geometry>
+          <material>
+            <ambient>0.15 0.35 0.12 1</ambient>
+            <diffuse>0.22 0.52 0.18 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: tree_charlie_9 (Pine) -->
+    <model name="tree_charlie_9">
+      <static>true</static>
+      <pose>39.85 56.55 0.00 0 0 2.93</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.43 0 0 0</pose>
+          <geometry><cylinder><radius>0.24</radius><length>2.86</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.43 0 0 0</pose>
+          <geometry><cylinder><radius>0.24</radius><length>2.86</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 4.01 0 0 0</pose>
+          <geometry><cone><radius>2.10</radius><length>2.86</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 5.53 0 0 0</pose>
+          <geometry><cone><radius>1.53</radius><length>2.29</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 6.87 0 0 0</pose>
+          <geometry><cone><radius>0.95</radius><length>1.72</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: tree_charlie_10 (Deciduous) -->
+    <model name="tree_charlie_10">
+      <static>true</static>
+      <pose>71.45 68.67 0.00 0 0 0.62</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.94 0 0 0</pose>
+          <geometry><cylinder><radius>0.39</radius><length>3.87</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.94 0 0 0</pose>
+          <geometry><cylinder><radius>0.39</radius><length>3.87</length></cylinder></geometry>
+          <material>
+            <ambient>0.3 0.2 0.1 1</ambient>
+            <diffuse>0.38 0.25 0.14 1</diffuse>
+          </material>
+        </visual>
+        <visual name="canopy_vis">
+          <pose>0 0 6.13 0 0 0</pose>
+          <geometry><sphere><radius>3.23</radius></sphere></geometry>
+          <material>
+            <ambient>0.15 0.35 0.12 1</ambient>
+            <diffuse>0.22 0.52 0.18 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: tree_charlie_11 (Pine) -->
+    <model name="tree_charlie_11">
+      <static>true</static>
+      <pose>55.13 51.97 0.00 0 0 1.56</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.83 0 0 0</pose>
+          <geometry><cylinder><radius>0.30</radius><length>3.65</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.83 0 0 0</pose>
+          <geometry><cylinder><radius>0.30</radius><length>3.65</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 5.11 0 0 0</pose>
+          <geometry><cone><radius>2.68</radius><length>3.65</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 7.06 0 0 0</pose>
+          <geometry><cone><radius>1.95</radius><length>2.92</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 8.76 0 0 0</pose>
+          <geometry><cone><radius>1.22</radius><length>2.19</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: tree_charlie_12 (Deciduous) -->
+    <model name="tree_charlie_12">
+      <static>true</static>
+      <pose>44.51 57.43 0.00 0 0 1.75</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.43 0 0 0</pose>
+          <geometry><cylinder><radius>0.29</radius><length>2.86</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.43 0 0 0</pose>
+          <geometry><cylinder><radius>0.29</radius><length>2.86</length></cylinder></geometry>
+          <material>
+            <ambient>0.3 0.2 0.1 1</ambient>
+            <diffuse>0.38 0.25 0.14 1</diffuse>
+          </material>
+        </visual>
+        <visual name="canopy_vis">
+          <pose>0 0 4.53 0 0 0</pose>
+          <geometry><sphere><radius>2.38</radius></sphere></geometry>
+          <material>
+            <ambient>0.15 0.35 0.12 1</ambient>
+            <diffuse>0.22 0.52 0.18 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: tree_charlie_13 (Pine) -->
+    <model name="tree_charlie_13">
+      <static>true</static>
+      <pose>47.49 81.16 0.00 0 0 5.41</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.45 0 0 0</pose>
+          <geometry><cylinder><radius>0.24</radius><length>2.90</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.45 0 0 0</pose>
+          <geometry><cylinder><radius>0.24</radius><length>2.90</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 4.06 0 0 0</pose>
+          <geometry><cone><radius>2.12</radius><length>2.90</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 5.60 0 0 0</pose>
+          <geometry><cone><radius>1.55</radius><length>2.32</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 6.95 0 0 0</pose>
+          <geometry><cone><radius>0.97</radius><length>1.74</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: tree_charlie_14 (Deciduous) -->
+    <model name="tree_charlie_14">
+      <static>true</static>
+      <pose>62.52 37.53 0.00 0 0 5.25</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.95 0 0 0</pose>
+          <geometry><cylinder><radius>0.39</radius><length>3.90</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.95 0 0 0</pose>
+          <geometry><cylinder><radius>0.39</radius><length>3.90</length></cylinder></geometry>
+          <material>
+            <ambient>0.3 0.2 0.1 1</ambient>
+            <diffuse>0.38 0.25 0.14 1</diffuse>
+          </material>
+        </visual>
+        <visual name="canopy_vis">
+          <pose>0 0 6.17 0 0 0</pose>
+          <geometry><sphere><radius>3.25</radius></sphere></geometry>
+          <material>
+            <ambient>0.15 0.35 0.12 1</ambient>
+            <diffuse>0.22 0.52 0.18 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: tree_charlie_15 (Pine) -->
+    <model name="tree_charlie_15">
+      <static>true</static>
+      <pose>83.45 81.32 0.00 0 0 1.04</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.81 0 0 0</pose>
+          <geometry><cylinder><radius>0.30</radius><length>3.63</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.81 0 0 0</pose>
+          <geometry><cylinder><radius>0.30</radius><length>3.63</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 5.08 0 0 0</pose>
+          <geometry><cone><radius>2.66</radius><length>3.63</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 7.01 0 0 0</pose>
+          <geometry><cone><radius>1.93</radius><length>2.90</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 8.71 0 0 0</pose>
+          <geometry><cone><radius>1.21</radius><length>2.18</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: tree_charlie_16 (Deciduous) -->
+    <model name="tree_charlie_16">
+      <static>true</static>
+      <pose>59.28 45.69 0.00 0 0 0.37</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.41 0 0 0</pose>
+          <geometry><cylinder><radius>0.28</radius><length>2.82</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.41 0 0 0</pose>
+          <geometry><cylinder><radius>0.28</radius><length>2.82</length></cylinder></geometry>
+          <material>
+            <ambient>0.3 0.2 0.1 1</ambient>
+            <diffuse>0.38 0.25 0.14 1</diffuse>
+          </material>
+        </visual>
+        <visual name="canopy_vis">
+          <pose>0 0 4.47 0 0 0</pose>
+          <geometry><sphere><radius>2.35</radius></sphere></geometry>
+          <material>
+            <ambient>0.15 0.35 0.12 1</ambient>
+            <diffuse>0.22 0.52 0.18 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: tree_charlie_17 (Pine) -->
+    <model name="tree_charlie_17">
+      <static>true</static>
+      <pose>53.95 84.27 0.00 0 0 4.92</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.29 0 0 0</pose>
+          <geometry><cylinder><radius>0.21</radius><length>2.58</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.29 0 0 0</pose>
+          <geometry><cylinder><radius>0.21</radius><length>2.58</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 3.61 0 0 0</pose>
+          <geometry><cone><radius>1.89</radius><length>2.58</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 4.98 0 0 0</pose>
+          <geometry><cone><radius>1.37</radius><length>2.06</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 6.19 0 0 0</pose>
+          <geometry><cone><radius>0.86</radius><length>1.55</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: tree_charlie_18 (Deciduous) -->
+    <model name="tree_charlie_18">
+      <static>true</static>
+      <pose>57.75 56.15 0.00 0 0 6.25</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.91 0 0 0</pose>
+          <geometry><cylinder><radius>0.38</radius><length>3.82</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.91 0 0 0</pose>
+          <geometry><cylinder><radius>0.38</radius><length>3.82</length></cylinder></geometry>
+          <material>
+            <ambient>0.3 0.2 0.1 1</ambient>
+            <diffuse>0.38 0.25 0.14 1</diffuse>
+          </material>
+        </visual>
+        <visual name="canopy_vis">
+          <pose>0 0 6.05 0 0 0</pose>
+          <geometry><sphere><radius>3.19</radius></sphere></geometry>
+          <material>
+            <ambient>0.15 0.35 0.12 1</ambient>
+            <diffuse>0.22 0.52 0.18 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: tree_charlie_19 (Pine) -->
+    <model name="tree_charlie_19">
+      <static>true</static>
+      <pose>62.79 70.92 0.00 0 0 1.86</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.19 0 0 0</pose>
+          <geometry><cylinder><radius>0.20</radius><length>2.38</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.19 0 0 0</pose>
+          <geometry><cylinder><radius>0.20</radius><length>2.38</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 3.33 0 0 0</pose>
+          <geometry><cone><radius>1.74</radius><length>2.38</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 4.60 0 0 0</pose>
+          <geometry><cone><radius>1.27</radius><length>1.90</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 5.71 0 0 0</pose>
+          <geometry><cone><radius>0.79</radius><length>1.43</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: tree_charlie_20 (Deciduous) -->
+    <model name="tree_charlie_20">
+      <static>true</static>
+      <pose>83.44 63.96 0.00 0 0 4.70</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.54 0 0 0</pose>
+          <geometry><cylinder><radius>0.31</radius><length>3.08</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.54 0 0 0</pose>
+          <geometry><cylinder><radius>0.31</radius><length>3.08</length></cylinder></geometry>
+          <material>
+            <ambient>0.3 0.2 0.1 1</ambient>
+            <diffuse>0.38 0.25 0.14 1</diffuse>
+          </material>
+        </visual>
+        <visual name="canopy_vis">
+          <pose>0 0 4.87 0 0 0</pose>
+          <geometry><sphere><radius>2.56</radius></sphere></geometry>
+          <material>
+            <ambient>0.15 0.35 0.12 1</ambient>
+            <diffuse>0.22 0.52 0.18 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: tree_charlie_21 (Pine) -->
+    <model name="tree_charlie_21">
+      <static>true</static>
+      <pose>37.86 64.21 0.00 0 0 5.36</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.50 0 0 0</pose>
+          <geometry><cylinder><radius>0.25</radius><length>3.01</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.50 0 0 0</pose>
+          <geometry><cylinder><radius>0.25</radius><length>3.01</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 4.21 0 0 0</pose>
+          <geometry><cone><radius>2.20</radius><length>3.01</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 5.81 0 0 0</pose>
+          <geometry><cone><radius>1.60</radius><length>2.40</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 7.21 0 0 0</pose>
+          <geometry><cone><radius>1.00</radius><length>1.80</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: tree_charlie_22 (Deciduous) -->
+    <model name="tree_charlie_22">
+      <static>true</static>
+      <pose>42.87 83.04 0.00 0 0 1.17</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.12 0 0 0</pose>
+          <geometry><cylinder><radius>0.22</radius><length>2.24</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.12 0 0 0</pose>
+          <geometry><cylinder><radius>0.22</radius><length>2.24</length></cylinder></geometry>
+          <material>
+            <ambient>0.3 0.2 0.1 1</ambient>
+            <diffuse>0.38 0.25 0.14 1</diffuse>
+          </material>
+        </visual>
+        <visual name="canopy_vis">
+          <pose>0 0 3.55 0 0 0</pose>
+          <geometry><sphere><radius>1.87</radius></sphere></geometry>
+          <material>
+            <ambient>0.15 0.35 0.12 1</ambient>
+            <diffuse>0.22 0.52 0.18 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: tree_charlie_23 (Pine) -->
+    <model name="tree_charlie_23">
+      <static>true</static>
+      <pose>64.75 68.76 0.00 0 0 0.75</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.26 0 0 0</pose>
+          <geometry><cylinder><radius>0.21</radius><length>2.52</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.26 0 0 0</pose>
+          <geometry><cylinder><radius>0.21</radius><length>2.52</length></cylinder></geometry>
+          <material>
+            <ambient>0.35 0.22 0.12 1</ambient>
+            <diffuse>0.42 0.26 0.15 1</diffuse>
+            <specular>0.05 0.05 0.05 1</specular>
+          </material>
+        </visual>
+        <!-- Foliage Cone 1 -->
+        <visual name="foliage_1">
+          <pose>0 0 3.53 0 0 0</pose>
+          <geometry><cone><radius>1.85</radius><length>2.52</length></cone></geometry>
+          <material>
+            <ambient>0.08 0.25 0.1 1</ambient>
+            <diffuse>0.12 0.38 0.15 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 2 -->
+        <visual name="foliage_2">
+          <pose>0 0 4.88 0 0 0</pose>
+          <geometry><cone><radius>1.35</radius><length>2.02</length></cone></geometry>
+          <material>
+            <ambient>0.1 0.3 0.12 1</ambient>
+            <diffuse>0.15 0.45 0.18 1</diffuse>
+          </material>
+        </visual>
+        <!-- Foliage Cone 3 Top -->
+        <visual name="foliage_3">
+          <pose>0 0 6.06 0 0 0</pose>
+          <geometry><cone><radius>0.84</radius><length>1.51</length></cone></geometry>
+          <material>
+            <ambient>0.12 0.35 0.15 1</ambient>
+            <diffuse>0.18 0.5 0.2 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: tree_charlie_24 (Deciduous) -->
+    <model name="tree_charlie_24">
+      <static>true</static>
+      <pose>79.51 47.31 0.00 0 0 3.89</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.59 0 0 0</pose>
+          <geometry><cylinder><radius>0.32</radius><length>3.17</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.59 0 0 0</pose>
+          <geometry><cylinder><radius>0.32</radius><length>3.17</length></cylinder></geometry>
+          <material>
+            <ambient>0.3 0.2 0.1 1</ambient>
+            <diffuse>0.38 0.25 0.14 1</diffuse>
+          </material>
+        </visual>
+        <visual name="canopy_vis">
+          <pose>0 0 5.02 0 0 0</pose>
+          <geometry><sphere><radius>2.64</radius></sphere></geometry>
+          <material>
+            <ambient>0.15 0.35 0.12 1</ambient>
+            <diffuse>0.22 0.52 0.18 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: river_shrub_0 (Deciduous) -->
+    <model name="river_shrub_0">
+      <static>true</static>
+      <pose>-14.54 54.33 0.00 0 0 5.87</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.06 0 0 0</pose>
+          <geometry><cylinder><radius>0.21</radius><length>2.13</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.06 0 0 0</pose>
+          <geometry><cylinder><radius>0.21</radius><length>2.13</length></cylinder></geometry>
+          <material>
+            <ambient>0.3 0.2 0.1 1</ambient>
+            <diffuse>0.38 0.25 0.14 1</diffuse>
+          </material>
+        </visual>
+        <visual name="canopy_vis">
+          <pose>0 0 3.37 0 0 0</pose>
+          <geometry><sphere><radius>1.77</radius></sphere></geometry>
+          <material>
+            <ambient>0.15 0.35 0.12 1</ambient>
+            <diffuse>0.22 0.52 0.18 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: river_shrub_1 (Deciduous) -->
+    <model name="river_shrub_1">
+      <static>true</static>
+      <pose>-53.23 54.86 0.00 0 0 2.49</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 0.89 0 0 0</pose>
+          <geometry><cylinder><radius>0.18</radius><length>1.79</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 0.89 0 0 0</pose>
+          <geometry><cylinder><radius>0.18</radius><length>1.79</length></cylinder></geometry>
+          <material>
+            <ambient>0.3 0.2 0.1 1</ambient>
+            <diffuse>0.38 0.25 0.14 1</diffuse>
+          </material>
+        </visual>
+        <visual name="canopy_vis">
+          <pose>0 0 2.83 0 0 0</pose>
+          <geometry><sphere><radius>1.49</radius></sphere></geometry>
+          <material>
+            <ambient>0.15 0.35 0.12 1</ambient>
+            <diffuse>0.22 0.52 0.18 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: river_shrub_2 (Deciduous) -->
+    <model name="river_shrub_2">
+      <static>true</static>
+      <pose>30.90 53.20 0.00 0 0 4.72</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 0.94 0 0 0</pose>
+          <geometry><cylinder><radius>0.19</radius><length>1.88</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 0.94 0 0 0</pose>
+          <geometry><cylinder><radius>0.19</radius><length>1.88</length></cylinder></geometry>
+          <material>
+            <ambient>0.3 0.2 0.1 1</ambient>
+            <diffuse>0.38 0.25 0.14 1</diffuse>
+          </material>
+        </visual>
+        <visual name="canopy_vis">
+          <pose>0 0 2.98 0 0 0</pose>
+          <geometry><sphere><radius>1.57</radius></sphere></geometry>
+          <material>
+            <ambient>0.15 0.35 0.12 1</ambient>
+            <diffuse>0.22 0.52 0.18 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: river_shrub_3 (Deciduous) -->
+    <model name="river_shrub_3">
+      <static>true</static>
+      <pose>-76.94 53.83 0.00 0 0 6.26</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.35 0 0 0</pose>
+          <geometry><cylinder><radius>0.27</radius><length>2.70</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.35 0 0 0</pose>
+          <geometry><cylinder><radius>0.27</radius><length>2.70</length></cylinder></geometry>
+          <material>
+            <ambient>0.3 0.2 0.1 1</ambient>
+            <diffuse>0.38 0.25 0.14 1</diffuse>
+          </material>
+        </visual>
+        <visual name="canopy_vis">
+          <pose>0 0 4.27 0 0 0</pose>
+          <geometry><sphere><radius>2.25</radius></sphere></geometry>
+          <material>
+            <ambient>0.15 0.35 0.12 1</ambient>
+            <diffuse>0.22 0.52 0.18 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: river_shrub_4 (Deciduous) -->
+    <model name="river_shrub_4">
+      <static>true</static>
+      <pose>-76.81 52.85 0.00 0 0 5.86</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 0.91 0 0 0</pose>
+          <geometry><cylinder><radius>0.18</radius><length>1.82</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 0.91 0 0 0</pose>
+          <geometry><cylinder><radius>0.18</radius><length>1.82</length></cylinder></geometry>
+          <material>
+            <ambient>0.3 0.2 0.1 1</ambient>
+            <diffuse>0.38 0.25 0.14 1</diffuse>
+          </material>
+        </visual>
+        <visual name="canopy_vis">
+          <pose>0 0 2.88 0 0 0</pose>
+          <geometry><sphere><radius>1.52</radius></sphere></geometry>
+          <material>
+            <ambient>0.15 0.35 0.12 1</ambient>
+            <diffuse>0.22 0.52 0.18 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: river_shrub_5 (Deciduous) -->
+    <model name="river_shrub_5">
+      <static>true</static>
+      <pose>68.56 55.52 0.00 0 0 0.99</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 0.97 0 0 0</pose>
+          <geometry><cylinder><radius>0.19</radius><length>1.94</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 0.97 0 0 0</pose>
+          <geometry><cylinder><radius>0.19</radius><length>1.94</length></cylinder></geometry>
+          <material>
+            <ambient>0.3 0.2 0.1 1</ambient>
+            <diffuse>0.38 0.25 0.14 1</diffuse>
+          </material>
+        </visual>
+        <visual name="canopy_vis">
+          <pose>0 0 3.08 0 0 0</pose>
+          <geometry><sphere><radius>1.62</radius></sphere></geometry>
+          <material>
+            <ambient>0.15 0.35 0.12 1</ambient>
+            <diffuse>0.22 0.52 0.18 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: river_shrub_6 (Deciduous) -->
+    <model name="river_shrub_6">
+      <static>true</static>
+      <pose>60.07 54.81 0.00 0 0 6.20</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.12 0 0 0</pose>
+          <geometry><cylinder><radius>0.22</radius><length>2.23</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.12 0 0 0</pose>
+          <geometry><cylinder><radius>0.22</radius><length>2.23</length></cylinder></geometry>
+          <material>
+            <ambient>0.3 0.2 0.1 1</ambient>
+            <diffuse>0.38 0.25 0.14 1</diffuse>
+          </material>
+        </visual>
+        <visual name="canopy_vis">
+          <pose>0 0 3.54 0 0 0</pose>
+          <geometry><sphere><radius>1.86</radius></sphere></geometry>
+          <material>
+            <ambient>0.15 0.35 0.12 1</ambient>
+            <diffuse>0.22 0.52 0.18 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: river_shrub_7 (Deciduous) -->
+    <model name="river_shrub_7">
+      <static>true</static>
+      <pose>27.72 52.03 0.00 0 0 1.88</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.24 0 0 0</pose>
+          <geometry><cylinder><radius>0.25</radius><length>2.48</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.24 0 0 0</pose>
+          <geometry><cylinder><radius>0.25</radius><length>2.48</length></cylinder></geometry>
+          <material>
+            <ambient>0.3 0.2 0.1 1</ambient>
+            <diffuse>0.38 0.25 0.14 1</diffuse>
+          </material>
+        </visual>
+        <visual name="canopy_vis">
+          <pose>0 0 3.93 0 0 0</pose>
+          <geometry><sphere><radius>2.07</radius></sphere></geometry>
+          <material>
+            <ambient>0.15 0.35 0.12 1</ambient>
+            <diffuse>0.22 0.52 0.18 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: river_shrub_8 (Deciduous) -->
+    <model name="river_shrub_8">
+      <static>true</static>
+      <pose>29.41 55.76 0.00 0 0 0.72</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 0.83 0 0 0</pose>
+          <geometry><cylinder><radius>0.17</radius><length>1.66</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 0.83 0 0 0</pose>
+          <geometry><cylinder><radius>0.17</radius><length>1.66</length></cylinder></geometry>
+          <material>
+            <ambient>0.3 0.2 0.1 1</ambient>
+            <diffuse>0.38 0.25 0.14 1</diffuse>
+          </material>
+        </visual>
+        <visual name="canopy_vis">
+          <pose>0 0 2.63 0 0 0</pose>
+          <geometry><sphere><radius>1.38</radius></sphere></geometry>
+          <material>
+            <ambient>0.15 0.35 0.12 1</ambient>
+            <diffuse>0.22 0.52 0.18 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: river_shrub_9 (Deciduous) -->
+    <model name="river_shrub_9">
+      <static>true</static>
+      <pose>-70.73 54.21 0.00 0 0 3.80</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 0.91 0 0 0</pose>
+          <geometry><cylinder><radius>0.18</radius><length>1.83</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 0.91 0 0 0</pose>
+          <geometry><cylinder><radius>0.18</radius><length>1.83</length></cylinder></geometry>
+          <material>
+            <ambient>0.3 0.2 0.1 1</ambient>
+            <diffuse>0.38 0.25 0.14 1</diffuse>
+          </material>
+        </visual>
+        <visual name="canopy_vis">
+          <pose>0 0 2.89 0 0 0</pose>
+          <geometry><sphere><radius>1.52</radius></sphere></geometry>
+          <material>
+            <ambient>0.15 0.35 0.12 1</ambient>
+            <diffuse>0.22 0.52 0.18 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: river_shrub_10 (Deciduous) -->
+    <model name="river_shrub_10">
+      <static>true</static>
+      <pose>39.17 52.81 0.00 0 0 1.66</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.13 0 0 0</pose>
+          <geometry><cylinder><radius>0.23</radius><length>2.26</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.13 0 0 0</pose>
+          <geometry><cylinder><radius>0.23</radius><length>2.26</length></cylinder></geometry>
+          <material>
+            <ambient>0.3 0.2 0.1 1</ambient>
+            <diffuse>0.38 0.25 0.14 1</diffuse>
+          </material>
+        </visual>
+        <visual name="canopy_vis">
+          <pose>0 0 3.58 0 0 0</pose>
+          <geometry><sphere><radius>1.88</radius></sphere></geometry>
+          <material>
+            <ambient>0.15 0.35 0.12 1</ambient>
+            <diffuse>0.22 0.52 0.18 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: river_shrub_11 (Deciduous) -->
+    <model name="river_shrub_11">
+      <static>true</static>
+      <pose>-2.06 55.62 0.00 0 0 0.58</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.26 0 0 0</pose>
+          <geometry><cylinder><radius>0.25</radius><length>2.52</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.26 0 0 0</pose>
+          <geometry><cylinder><radius>0.25</radius><length>2.52</length></cylinder></geometry>
+          <material>
+            <ambient>0.3 0.2 0.1 1</ambient>
+            <diffuse>0.38 0.25 0.14 1</diffuse>
+          </material>
+        </visual>
+        <visual name="canopy_vis">
+          <pose>0 0 3.98 0 0 0</pose>
+          <geometry><sphere><radius>2.10</radius></sphere></geometry>
+          <material>
+            <ambient>0.15 0.35 0.12 1</ambient>
+            <diffuse>0.22 0.52 0.18 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: river_shrub_12 (Deciduous) -->
+    <model name="river_shrub_12">
+      <static>true</static>
+      <pose>-13.76 53.11 0.00 0 0 4.84</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 0.75 0 0 0</pose>
+          <geometry><cylinder><radius>0.15</radius><length>1.50</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 0.75 0 0 0</pose>
+          <geometry><cylinder><radius>0.15</radius><length>1.50</length></cylinder></geometry>
+          <material>
+            <ambient>0.3 0.2 0.1 1</ambient>
+            <diffuse>0.38 0.25 0.14 1</diffuse>
+          </material>
+        </visual>
+        <visual name="canopy_vis">
+          <pose>0 0 2.38 0 0 0</pose>
+          <geometry><sphere><radius>1.25</radius></sphere></geometry>
+          <material>
+            <ambient>0.15 0.35 0.12 1</ambient>
+            <diffuse>0.22 0.52 0.18 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: river_shrub_13 (Deciduous) -->
+    <model name="river_shrub_13">
+      <static>true</static>
+      <pose>24.68 53.05 0.00 0 0 3.46</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 1.19 0 0 0</pose>
+          <geometry><cylinder><radius>0.24</radius><length>2.39</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 1.19 0 0 0</pose>
+          <geometry><cylinder><radius>0.24</radius><length>2.39</length></cylinder></geometry>
+          <material>
+            <ambient>0.3 0.2 0.1 1</ambient>
+            <diffuse>0.38 0.25 0.14 1</diffuse>
+          </material>
+        </visual>
+        <visual name="canopy_vis">
+          <pose>0 0 3.78 0 0 0</pose>
+          <geometry><sphere><radius>1.99</radius></sphere></geometry>
+          <material>
+            <ambient>0.15 0.35 0.12 1</ambient>
+            <diffuse>0.22 0.52 0.18 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+    <!-- Tree: river_shrub_14 (Deciduous) -->
+    <model name="river_shrub_14">
+      <static>true</static>
+      <pose>-13.02 52.04 0.00 0 0 5.55</pose>
+      <link name="link">
+        <collision name="trunk_col">
+          <pose>0 0 0.80 0 0 0</pose>
+          <geometry><cylinder><radius>0.16</radius><length>1.59</length></cylinder></geometry>
+        </collision>
+        <visual name="trunk_vis">
+          <pose>0 0 0.80 0 0 0</pose>
+          <geometry><cylinder><radius>0.16</radius><length>1.59</length></cylinder></geometry>
+          <material>
+            <ambient>0.3 0.2 0.1 1</ambient>
+            <diffuse>0.38 0.25 0.14 1</diffuse>
+          </material>
+        </visual>
+        <visual name="canopy_vis">
+          <pose>0 0 2.52 0 0 0</pose>
+          <geometry><sphere><radius>1.33</radius></sphere></geometry>
+          <material>
+            <ambient>0.15 0.35 0.12 1</ambient>
+            <diffuse>0.22 0.52 0.18 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+
+
+    <!-- World Observer Overview Camera (Panoramic Camp and Flight Theater View) -->
+    <model name="world_observer_camera">
+      <static>true</static>
+      <pose>32.0 16.0 10.5 0 0.22 -2.67</pose>
+      <link name="camera_link">
+        <sensor name="world_observer_sensor" type="camera">
+          <always_on>1</always_on>
+          <update_rate>20</update_rate>
+          <camera name="world_overview">
+            <horizontal_fov>1.40</horizontal_fov>
+            <image>
+              <width>640</width>
+              <height>480</height>
+              <format>R8G8B8</format>
+            </image>
+            <clip>
+              <near>0.2</near>
+              <far>400</far>
+            </clip>
+          </camera>
+          <topic>/world/camera/overview/image_raw</topic>
+        </sensor>
+        <visual name="cam_housing">
+          <geometry><box><size>0.4 0.25 0.25</size></box></geometry>
+          <material><ambient>0.1 0.1 0.15 1</ambient><diffuse>0.2 0.2 0.25 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Autonomous Industrial Multirotor Drone on Landing Pad -->
+    <include>
+      <uri>/home/hari/.gemini/antigravity/scratch/surveillance_drone_ws/src/drone_description/models/surveillance_hexacopter</uri>
+      <name>surveillance_drone</name>
+      <pose>0 0 0.49 0 0 0</pose>
+    </include>
+  </world>
+
+</sdf>

@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AeroGuard 3D Digital Twin - Autonomous Surveillance GCS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+  <!-- Leaflet CSS for Tactical Surveillance Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+</head>
+<body>
+  <!-- Top Navigation HUD Bar -->
+  <header class="hud-topbar">
+    <div class="hud-brand">
+      <div class="hud-logo-icon">
+        <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none">
+          <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+          <polyline points="2 17 12 22 22 17"></polyline>
+          <polyline points="2 12 12 17 22 12"></polyline>
+        </svg>
+      </div>
+      <div class="hud-title-block">
+        <span class="hud-title">AEROGUARD 3D</span>
+        <span class="hud-subtitle">SURVEILLANCE QUADCOPTER DIGITAL TWIN</span>
+      </div>
+    </div>
+
+    <div class="hud-status-cluster">
+      <div class="hud-pill pill-online">
+        <span class="pill-dot"></span>
+        <span class="pill-text">SIMULATION ACTIVE</span>
+      </div>
+      <div class="hud-pill pill-ros">
+        <span class="pill-dot"></span>
+        <span class="pill-text">ROS 2 JAZZY / GZ SIM</span>
+      </div>
+      <div class="hud-pill" id="flightStatePill">
+        <span class="pill-text font-mono" id="flightStateText">IDLE</span>
+      </div>
+      <div class="hud-pill pill-zone">
+        <span class="pill-label">ZONE:</span>
+        <span class="pill-value font-mono" id="activeZoneText">ZONE ALPHA</span>
+      </div>
+      <div class="hud-pill pill-zone" style="border-color: rgba(0, 240, 255, 0.4);">
+        <span class="pill-label" style="color: #00f0ff;">AIRSPACE:</span>
+        <span class="pill-value font-mono" style="color: #00f0ff;">COUNTRY A ONLY</span>
+      </div>
+    </div>
+
+    <div class="hud-metrics-cluster">
+      <div class="metric-chip">
+        <span class="chip-label">MISSION TIME</span>
+        <span class="chip-value font-mono" id="missionTimeText">00:00:00</span>
+      </div>
+      <div class="metric-chip">
+        <span class="chip-label">BATTERY (6S LiPo)</span>
+        <div class="chip-battery-bar">
+          <div class="battery-fill" id="batteryFillBar" style="width: 100%;"></div>
+        </div>
+        <span class="chip-value font-mono" id="batteryPercentText">100.0%</span>
+      </div>
+      <div class="metric-chip">
+        <span class="chip-label">GNSS FIX</span>
+        <span class="chip-value text-emerald font-mono" id="gpsFixText">3D RTK (21 SV)</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main 3-Column Tactical Workspace -->
+  <main class="gcs-layout">
+    
+    <!-- LEFT PANEL: Flight Instruments & Navigation PFD -->
+    <aside class="panel panel-instruments">
+      <div class="panel-header">
+        <span class="panel-title">PRIMARY FLIGHT DISPLAY (PFD)</span>
+        <span class="badge badge-accent">20 Hz TELEMETRY</span>
+      </div>
+
+      <!-- Artificial Horizon / Attitude Director Indicator (ADI) -->
+      <div class="instrument-box adi-box">
+        <div class="instrument-title">ATTITUDE DIRECTOR (ADI)</div>
+        <div class="adi-container">
+          <svg id="adiSvg" viewBox="0 0 200 160">
+            <defs>
+              <clipPath id="adiClip">
+                <circle cx="100" cy="80" r="72"/>
+              </clipPath>
+            </defs>
+            <circle cx="100" cy="80" r="74" class="adi-bezel"/>
+            <g clip-path="url(#adiClip)">
+              <g id="adiHorizonGroup">
+                <!-- Sky -->
+                <rect x="-100" y="-120" width="400" height="200" class="adi-sky"/>
+                <!-- Ground -->
+                <rect x="-100" y="80" width="400" height="200" class="adi-ground"/>
+                <!-- Horizon Line -->
+                <line x1="-100" y1="80" x2="300" y2="80" class="adi-horizon-line"/>
+                <!-- Pitch Ladder -->
+                <line x1="85" y1="60" x2="115" y2="60" class="adi-pitch-line"/>
+                <line x1="90" y1="70" x2="110" y2="70" class="adi-pitch-line"/>
+                <line x1="90" y1="90" x2="110" y2="90" class="adi-pitch-line"/>
+                <line x1="85" y1="100" x2="115" y2="100" class="adi-pitch-line"/>
+              </g>
+              <!-- Fixed Airplane Crosshair -->
+              <circle cx="100" cy="80" r="3" class="adi-reticle"/>
+              <line x1="60" y1="80" x2="85" y2="80" class="adi-reticle-wing"/>
+              <line x1="115" y1="80" x2="140" y2="80" class="adi-reticle-wing"/>
+            </g>
+            <path d="M 100 8 L 96 14 L 104 14 Z" class="adi-roll-pointer"/>
+          </svg>
+        </div>
+        <div class="adi-readout">
+          <div>ROLL: <span class="font-mono" id="rollText">0.0°</span></div>
+          <div>PITCH: <span class="font-mono" id="pitchText">0.0°</span></div>
+        </div>
+      </div>
+
+      <!-- Dual Altitude Readings (AGL vs MSL Datum) -->
+      <div class="instrument-box">
+        <div class="instrument-title">ALTITUDE GAUGES (AGL vs MSL)</div>
+        <div class="altimeter-grid">
+          <div class="alt-card">
+            <span class="alt-label">GROUND LEVEL (AGL)</span>
+            <div class="alt-primary"><span id="altAglM">0.0</span> <small>m</small></div>
+            <div class="alt-secondary"><span id="altAglFt">0.0</span> ft</div>
+          </div>
+          <div class="alt-card">
+            <span class="alt-label">DATUM LEVEL (MSL)</span>
+            <div class="alt-primary text-cyan"><span id="altMslM">1800.5</span> <small>m</small></div>
+            <div class="alt-secondary"><span id="altMslFt">5907.1</span> ft</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Digital Compass Rose with 4 Heading Vectors -->
+      <div class="instrument-box compass-box">
+        <div class="instrument-title">DIGITAL COMPASS ROSE</div>
+        <div class="compass-container">
+          <svg id="compassSvg" viewBox="0 0 200 200">
+            <circle cx="100" cy="100" r="92" class="compass-dial"/>
+            <circle cx="100" cy="100" r="80" class="compass-inner"/>
+            
+            <!-- Rotating Dial Group -->
+            <g id="compassRoseGroup">
+              <!-- Cardinals -->
+              <text x="100" y="32" class="compass-cardinal text-north">N</text>
+              <text x="174" y="105" class="compass-cardinal">E</text>
+              <text x="100" y="180" class="compass-cardinal">S</text>
+              <text x="26" y="105" class="compass-cardinal">W</text>
+              <!-- Degree ticks -->
+              <line x1="100" y1="12" x2="100" y2="20" class="compass-tick"/>
+              <line x1="188" y1="100" x2="180" y2="100" class="compass-tick"/>
+              <line x1="100" y1="188" x2="100" y2="180" class="compass-tick"/>
+              <line x1="12" y1="100" x2="20" y2="100" class="compass-tick"/>
+            </g>
+
+            <!-- Needles -->
+            <!-- 1. Home Direction Needle (White Chevron) -->
+            <g id="needleHome"><path d="M 100 38 L 94 48 L 106 48 Z" class="needle-home"/></g>
+            <!-- 2. Waypoint Direction Needle (Magenta Pointer) -->
+            <g id="needleWp"><line x1="100" y1="100" x2="100" y2="42" class="needle-wp"/><circle cx="100" cy="42" r="3" class="needle-wp-dot"/></g>
+            <!-- 3. Course Over Ground / COG (Cyan Diamond) -->
+            <g id="needleCog"><polygon points="100,32 104,40 100,48 96,40" class="needle-cog"/></g>
+            <!-- 4. Nose Heading Needle (Yellow Aircraft Nose) -->
+            <g id="needleHeading">
+              <polygon points="100,24 94,85 106,85" class="needle-nose"/>
+              <circle cx="100" cy="100" r="6" class="needle-hub"/>
+            </g>
+          </svg>
+        </div>
+        <div class="compass-legend">
+          <div class="legend-item"><span class="legend-color color-nose"></span> NOSE: <b id="compassHeadingVal">000°</b></div>
+          <div class="legend-item"><span class="legend-color color-cog"></span> COG: <b id="compassCogVal">000°</b></div>
+          <div class="legend-item"><span class="legend-color color-wp"></span> WP: <b id="compassWpVal">000°</b></div>
+          <div class="legend-item"><span class="legend-color color-home"></span> HOME: <b id="compassHomeVal">000°</b></div>
+        </div>
+      </div>
+
+      <!-- Speeds & Coordinates -->
+      <div class="instrument-box">
+        <div class="instrument-title">SPEEDS & CARTESIAN 3D</div>
+        <div class="metrics-mini-grid">
+          <div class="mini-card">
+            <span class="mini-label">GROUND SPEED</span>
+            <span class="mini-value font-mono" id="speedGround">0.0 <small>m/s</small></span>
+          </div>
+          <div class="mini-card">
+            <span class="mini-label">VERTICAL V_Z</span>
+            <span class="mini-value font-mono" id="speedVertical">0.0 <small>m/s</small></span>
+          </div>
+          <div class="mini-card">
+            <span class="mini-label">LOCAL X / Y</span>
+            <span class="mini-value font-mono" id="coordsXy">0.0, 0.0</span>
+          </div>
+          <div class="mini-card">
+            <span class="mini-label">LOCAL Z (ALT)</span>
+            <span class="mini-value font-mono" id="coordsZ">0.49 m</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Battery & Power Details -->
+      <div class="instrument-box">
+        <div class="instrument-title">POWER & INDUCTIVE DOCKING</div>
+        <div class="power-table">
+          <div class="power-row"><span>PACK VOLTAGE</span><b class="font-mono" id="battVoltage">25.2 V</b></div>
+          <div class="power-row"><span>POWER DRAW</span><b class="font-mono" id="battPower">18.0 W</b></div>
+          <div class="power-row"><span>ENERGY REMAINING</span><b class="font-mono" id="battRemaining">555.0 Wh</b></div>
+          <div class="power-row"><span>RTH THRESHOLD</span><b class="font-mono text-amber" id="battRthThreshold">20.0%</b></div>
+          <div class="power-row"><span>EST. TIME REMAINING</span><b class="font-mono" id="battEstTime">52.0 min</b></div>
+          <div class="power-row"><span>DOCKING STATUS</span><b class="font-mono" id="dockingStatus">DISCONNECTED</b></div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- CENTER PANEL: Gazebo Live Camera Suite & Tactical Map -->
+    <section class="panel panel-center">
+      
+      <!-- Video Streaming Area -->
+      <div class="camera-stage">
+        <div class="stage-header">
+          <div class="stage-title-group">
+            <span class="panel-title">LIVE GAZEBO SENSOR STREAMS</span>
+            <div class="layout-toggles">
+              <button class="btn-toggle active" data-layout="dual">DUAL CAM</button>
+              <button class="btn-toggle" data-layout="overview">OVERVIEW</button>
+              <button class="btn-toggle" data-layout="drone">DRONE RGB</button>
+              <button class="btn-toggle" data-layout="thermal">THERMAL LWIR</button>
+              <button class="btn-toggle" data-layout="nvg">GEN-3 NVG</button>
+              <button class="btn-toggle" data-layout="quad">QUAD GRID</button>
+            </div>
+          </div>
+          <div class="stream-stats">
+            <span class="stat-pill"><span class="pill-dot"></span> <span id="cameraFps">20.0</span> FPS</span>
+            <span class="stat-pill">LATENCY: <span id="cameraLatency">12.4</span> ms</span>
+          </div>
+        </div>
+
+        <!-- Video Frame Viewports -->
+        <div class="camera-viewports dual-view" id="cameraViewports">
+          <!-- Viewport 1: World Observer Overview Camera -->
+          <div class="cam-box" id="camBoxOverview">
+            <div class="cam-banner">
+              <span class="cam-name">GAZEBO WORLD OBSERVER (WATCHTOWER CAM)</span>
+              <span class="cam-live-indicator">● LIVE OGRE2</span>
+            </div>
+            <div class="cam-img-wrap">
+              <img id="streamOverviewImg" src="/api/stream/overview" alt="Gazebo Overview Camera Stream">
+            </div>
+          </div>
+
+          <!-- Viewport 2: Drone-Mounted Forward Camera -->
+          <div class="cam-box" id="camBoxForward">
+            <div class="cam-banner">
+              <span class="cam-name">DRONE FORWARD OPTICAL (YOLO TRACKER)</span>
+              <span class="cam-live-indicator">● LIVE GIMBAL</span>
+            </div>
+            <div class="cam-img-wrap">
+              <img id="streamForwardImg" src="/api/stream/forward" alt="Drone Forward Camera Stream">
+            </div>
+          </div>
+
+          <!-- Viewport 3: Synthetic LWIR Thermal Camera (Hidden in Dual, shown in Quad or Switch) -->
+          <div class="cam-box hidden" id="camBoxThermal">
+            <div class="cam-banner">
+              <span class="cam-name">SYNTHETIC LWIR THERMAL (INFERNO)</span>
+              <span class="cam-live-indicator">● 8-14 µm</span>
+            </div>
+            <div class="cam-img-wrap">
+              <img id="streamThermalImg" src="/api/stream/thermal" alt="Thermal LWIR Stream">
+            </div>
+          </div>
+
+          <!-- Viewport 4: Gen-3 Night-Vision Intensifier (Hidden in Dual, shown in Quad or Switch) -->
+          <div class="cam-box hidden" id="camBoxNvg">
+            <div class="cam-banner">
+              <span class="cam-name">GEN-3 NIGHT VISION (P43 PHOSPHOR)</span>
+              <span class="cam-live-indicator">● INTENSIFIER</span>
+            </div>
+            <div class="cam-img-wrap">
+              <img id="streamNvgImg" src="/api/stream/nvg" alt="Gen-3 Night Vision Stream">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tactical 2D Map & Autonomous Boustrophedon Tracking -->
+      <div class="tactical-stage">
+        <div class="stage-header">
+          <div class="map-title-row">
+            <span class="panel-title">TACTICAL SURVEILLANCE MAP &amp; COVERAGE GRID</span>
+            <div class="coverage-hud-pill">
+              <span class="cov-label">AREA COVERED:</span>
+              <span class="cov-val text-emerald font-mono" id="mapCoveragePct">0.0%</span>
+              <span class="cov-sub font-mono" id="mapCoverageArea">(0 m²)</span>
+              <div class="coverage-bar-track">
+                <div class="coverage-bar-fill" id="mapCoverageBar" style="width: 0%;"></div>
+              </div>
+            </div>
+          </div>
+          <div class="map-legend">
+            <span><span class="legend-dot dot-border"></span> Border Line (32m)</span>
+            <span><span class="legend-dot dot-cov"></span> Surveyed Grid</span>
+            <span><span class="legend-dot dot-alpha"></span> Zone Alpha</span>
+            <span><span class="legend-dot dot-bravo"></span> Zone Bravo</span>
+            <span><span class="legend-dot dot-charlie"></span> Zone Charlie</span>
+            <span><span class="legend-dot dot-delta"></span> Zone Delta</span>
+            <span><span class="legend-dot dot-drone"></span> Drone Position</span>
+          </div>
+        </div>
+        <div id="tacticalMap" class="map-viewport"></div>
+      </div>
+
+      <!-- Mission Command Bar -->
+      <div class="command-bar">
+        <div class="cmd-group">
+          <button class="btn btn-primary" id="btnStartMission">START MISSION</button>
+          <button class="btn btn-secondary" id="btnPauseMission">PAUSE</button>
+          <button class="btn btn-secondary" id="btnResumeMission">RESUME</button>
+          <button class="btn btn-warning" id="btnRthMission">RETURN TO HOME (RTH)</button>
+          <button class="btn btn-danger" id="btnAbortMission">ABORT</button>
+          <button class="btn btn-outline" id="btnResetMission">RESET</button>
+        </div>
+        <div class="scenario-selector">
+          <label for="scenarioSelect">SCENARIO PRESET:</label>
+          <select id="scenarioSelect" class="form-select">
+            <option value="day_sweep">1. Daytime Full Monitored Surveillance</option>
+            <option value="night_nvg">2. Nighttime Low-Light NVG &amp; LWIR</option>
+            <option value="pedestrian_breach">3. Perimeter Pedestrian Movement</option>
+            <option value="wildlife_tracking">4. Sector Bravo Wildlife Observation</option>
+            <option value="vehicle_intercept">5. Northern Roadway Vehicle Intercept</option>
+            <option value="wildfire_hazard">6. Wildfire Thermal Hazard Alert</option>
+            <option value="battery_rth">7. Low-Battery Auto-RTH &amp; Fast-Charging</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT PANEL: Event Center, Operator Triage & Audit Reports -->
+    <aside class="panel panel-events">
+      <!-- Top Level View Switcher Tabs -->
+      <div class="panel-tab-bar">
+        <button class="panel-tab-btn active" id="tabSurveillanceBtn" data-target="surveillanceTabPane">
+          <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
+          SURVEILLANCE DETECTIONS
+        </button>
+        <button class="panel-tab-btn" id="tabPersonnelBtn" data-target="personnelTabPane">
+          <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          PERSONNEL AUTH &amp; ID
+          <span class="badge" id="personnelAlertCountBadge" style="background:#ffd000;color:#000;font-size:8px;padding:1px 4px;border-radius:2px;display:none;">ALERT</span>
+        </button>
+      </div>
+
+      <!-- TAB 1: Real-Time Surveillance Event Center -->
+      <div class="tab-pane active" id="surveillanceTabPane">
+        <div class="panel-header">
+          <span class="panel-title">REAL-TIME EVENT CENTER</span>
+          <span class="badge" id="eventCountBadge">0 EVENTS</span>
+        </div>
+
+        <!-- Event Category Filter Pills -->
+        <div class="event-filter-bar">
+          <button class="filter-pill active" data-filter="all">ALL</button>
+          <button class="filter-pill" data-filter="man">MEN</button>
+          <button class="filter-pill" data-filter="woman">WOMEN</button>
+          <button class="filter-pill" data-filter="wildlife">ANIMALS</button>
+          <button class="filter-pill" data-filter="vehicle">VEHICLES</button>
+          <button class="filter-pill" data-filter="fire">HAZARDS</button>
+        </div>
+
+        <!-- Live Event Log Stream -->
+        <div class="event-log-container" id="eventLogContainer">
+          <!-- Event items injected dynamically by app.js -->
+          <div class="empty-state">No observations recorded yet. Start a mission to begin surveillance sweep.</div>
+        </div>
+
+        <!-- Audit Reports & Persistent Export -->
+        <div class="reports-box">
+          <div class="instrument-title">MISSION AUDIT &amp; EXPORT</div>
+          <p class="reports-note">Official cryptographically verified mission audit documents with SHA-256 hashes.</p>
+          <div class="report-btn-group">
+            <a href="/api/reports/pdf" target="_blank" class="btn btn-report btn-pdf">
+              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+              DOWNLOAD PDF AUDIT
+            </a>
+            <a href="/api/reports/csv" target="_blank" class="btn btn-report btn-csv">
+              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="16" y2="17"></line></svg>
+              EXPORT CSV LOG
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: Dedicated Personnel Identification & Authentication Cockpit -->
+      <div class="tab-pane" id="personnelTabPane">
+        <div class="panel-header">
+          <span class="panel-title">PERSONNEL AUTH &amp; ID COCKPIT</span>
+          <span class="badge badge-accent" id="personnelCountBadge">0 DETECTED</span>
+        </div>
+
+        <!-- Scenario Selector Bar -->
+        <div class="personnel-scenario-bar">
+          <div class="personnel-scenario-label">
+            <span>INJECT DEMONSTRATION SCENARIO:</span>
+            <span id="activeScenarioLabel" class="text-cyan font-mono">SCENARIO_A</span>
+          </div>
+          <select id="personnelScenarioSelect" class="personnel-scenario-select">
+            <option value="SCENARIO_A">Scenario A: Authorized Commander Vance (UWB -> AUTHENTICATED)</option>
+            <option value="SCENARIO_B">Scenario B: Officer Mitchell (Tag Depleted -> UNVERIFIED)</option>
+            <option value="SCENARIO_C">Scenario C: Rogue Clone (Duplicate Tag -> CREDENTIAL_CONFLICT)</option>
+            <option value="SCENARIO_D">Scenario D: Difficult Conditions (Obscured Face -> Tag Valid)</option>
+            <option value="SCENARIO_NO_ID">Scenario E: Individual with NO ID CARD (Security Alert)</option>
+          </select>
+        </div>
+
+        <!-- Dynamic NO ID CARD Warning Alert Banner (Rendered when subject without card is active) -->
+        <div id="noIdCardAlertContainer"></div>
+
+        <!-- Active Correlated Personnel Cards List -->
+        <div class="personnel-list-container" id="personnelListContainer">
+          <div class="empty-state">No personnel detected in camera or RF field. Select a scenario above or fly surveillance pattern.</div>
+        </div>
+
+        <!-- Audit Event Timeline -->
+        <div class="personnel-timeline-box" id="personnelTimelineBox">
+          <div class="instrument-title" style="margin-bottom: 4px;">PERSONNEL EVENT AUDIT TIMELINE</div>
+          <div id="personnelTimelineList">
+            <div class="timeline-entry"><span class="timeline-time">SYSTEM</span><span class="timeline-text">Personnel identification stack initialized. Cryptographic HMAC active.</span></div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+  </main>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <!-- GCS Logic -->
+  <script src="/static/app.js"></script>
+</body>
+</html>

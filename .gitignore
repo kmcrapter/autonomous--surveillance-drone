@@ -1,0 +1,11 @@
+venv/
+build/
+install/
+log/
+__pycache__/
+*.pyc
+*.pyo
+*.tmp
+*.log
+data/db/*.db-journal
+data/snapshots/*

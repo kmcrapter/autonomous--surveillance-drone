@@ -1,0 +1,415 @@
+<?xml version="1.0" ?>
+<sdf version="1.8">
+  <model name="surveillance_hexacopter">
+    <pose>0 0 0.4 0 0 0</pose>
+    <link name="base_link">
+      <gravity>0</gravity>
+      <inertial>
+        <mass>12.5</mass>
+        <pose>0 0 0 0 0 0</pose>
+        <inertia>
+          <ixx>0.45</ixx>
+          <ixy>0.0</ixy>
+          <ixz>0.0</ixz>
+          <iyy>0.45</iyy>
+          <iyz>0.0</iyz>
+          <izz>0.85</izz>
+        </inertia>
+      </inertial>
+
+      <!-- Collision Model (Simplified bounding boxes for robust physics) -->
+      <collision name="fuselage_col">
+        <pose>0 0 0.05 0 0 0</pose>
+        <geometry><cylinder><radius>0.42</radius><length>0.24</length></cylinder></geometry>
+      </collision>
+      <collision name="landing_skid_left_col">
+        <pose>0 0.38 -0.22 1.5708 0 0</pose>
+        <geometry><cylinder><radius>0.025</radius><length>1.1</length></cylinder></geometry>
+      </collision>
+      <collision name="landing_skid_right_col">
+        <pose>0 -0.38 -0.22 1.5708 0 0</pose>
+        <geometry><cylinder><radius>0.025</radius><length>1.1</length></cylinder></geometry>
+      </collision>
+
+      <!-- Visual Model (High Detailed Industrial Aerodynamic Fuselage) -->
+      <!-- Central Body Core (Hexagonal avionics pod) -->
+      <visual name="fuselage_main">
+        <pose>0 0 0.05 0 0 0</pose>
+        <geometry><cylinder><radius>0.42</radius><length>0.16</length></cylinder></geometry>
+        <material>
+          <ambient>0.12 0.13 0.15 1</ambient>
+          <diffuse>0.18 0.20 0.22 1</diffuse>
+          <specular>0.5 0.5 0.55 1</specular>
+        </material>
+      </visual>
+
+      <!-- Aerodynamic Top Canopy Dome -->
+      <visual name="canopy_dome">
+        <pose>0 0 0.14 0 0 0</pose>
+        <geometry><ellipsoid><radii>0.32 0.28 0.09</radii></ellipsoid></geometry>
+        <material>
+          <ambient>0.08 0.12 0.18 1</ambient>
+          <diffuse>0.1 0.18 0.26 1</diffuse>
+          <specular>0.8 0.8 0.9 1</specular>
+        </material>
+      </visual>
+
+      <!-- GNSS / GPS Dual Antenna Mast -->
+      <visual name="gps_mast_left">
+        <pose>0.15 0.18 0.21 0 0 0</pose>
+        <geometry><cylinder><radius>0.04</radius><length>0.04</length></cylinder></geometry>
+        <material><ambient>0.85 0.85 0.85 1</ambient><diffuse>0.95 0.95 0.95 1</diffuse></material>
+      </visual>
+      <visual name="gps_mast_right">
+        <pose>0.15 -0.18 0.21 0 0 0</pose>
+        <geometry><cylinder><radius>0.04</radius><length>0.04</length></cylinder></geometry>
+        <material><ambient>0.85 0.85 0.85 1</ambient><diffuse>0.95 0.95 0.95 1</diffuse></material>
+      </visual>
+
+      <!-- Carbon Structural Rotor Arms & Motors -->
+
+      <!-- Carbon Structural Rotor Arms & Motors (4x Heavy-Duty Quadcopter X-Frame) -->
+
+      <!-- Arm 0: Front-Right (45 deg) -->
+      <visual name="arm_0_boom">
+        <pose>0.2546 0.2546 0.05 0 1.5708 0.7854</pose>
+        <geometry><cylinder><radius>0.024</radius><length>0.7200</length></cylinder></geometry>
+        <material><ambient>0.1 0.1 0.12 1</ambient><diffuse>0.15 0.15 0.18 1</diffuse><specular>0.4 0.4 0.4 1</specular></material>
+      </visual>
+      <visual name="motor_0_mount">
+        <pose>0.5091 0.5091 0.08 0 0 0</pose>
+        <geometry><cylinder><radius>0.06</radius><length>0.09</length></cylinder></geometry>
+        <material><ambient>0.2 0.22 0.25 1</ambient><diffuse>0.25 0.28 0.32 1</diffuse><specular>0.8 0.8 0.8 1</specular></material>
+      </visual>
+      <visual name="motor_0_spinner">
+        <pose>0.5091 0.5091 0.135 0 0 0</pose>
+        <geometry><sphere><radius>0.026</radius></sphere></geometry>
+        <material><ambient>0.8 0.2 0.2 1</ambient><diffuse>0.9 0.2 0.2 1</diffuse></material>
+      </visual>
+
+      <!-- Arm 1: Front-Left (135 deg) -->
+      <visual name="arm_1_boom">
+        <pose>-0.2546 0.2546 0.05 0 1.5708 2.3562</pose>
+        <geometry><cylinder><radius>0.024</radius><length>0.7200</length></cylinder></geometry>
+        <material><ambient>0.1 0.1 0.12 1</ambient><diffuse>0.15 0.15 0.18 1</diffuse><specular>0.4 0.4 0.4 1</specular></material>
+      </visual>
+      <visual name="motor_1_mount">
+        <pose>-0.5091 0.5091 0.08 0 0 0</pose>
+        <geometry><cylinder><radius>0.06</radius><length>0.09</length></cylinder></geometry>
+        <material><ambient>0.2 0.22 0.25 1</ambient><diffuse>0.25 0.28 0.32 1</diffuse><specular>0.8 0.8 0.8 1</specular></material>
+      </visual>
+      <visual name="motor_1_spinner">
+        <pose>-0.5091 0.5091 0.135 0 0 0</pose>
+        <geometry><sphere><radius>0.026</radius></sphere></geometry>
+        <material><ambient>0.8 0.2 0.2 1</ambient><diffuse>0.9 0.2 0.2 1</diffuse></material>
+      </visual>
+
+      <!-- Arm 2: Rear-Left (225 deg) -->
+      <visual name="arm_2_boom">
+        <pose>-0.2546 -0.2546 0.05 0 1.5708 3.9270</pose>
+        <geometry><cylinder><radius>0.024</radius><length>0.7200</length></cylinder></geometry>
+        <material><ambient>0.1 0.1 0.12 1</ambient><diffuse>0.15 0.15 0.18 1</diffuse><specular>0.4 0.4 0.4 1</specular></material>
+      </visual>
+      <visual name="motor_2_mount">
+        <pose>-0.5091 -0.5091 0.08 0 0 0</pose>
+        <geometry><cylinder><radius>0.06</radius><length>0.09</length></cylinder></geometry>
+        <material><ambient>0.2 0.22 0.25 1</ambient><diffuse>0.25 0.28 0.32 1</diffuse><specular>0.8 0.8 0.8 1</specular></material>
+      </visual>
+      <visual name="motor_2_spinner">
+        <pose>-0.5091 -0.5091 0.135 0 0 0</pose>
+        <geometry><sphere><radius>0.026</radius></sphere></geometry>
+        <material><ambient>0.8 0.2 0.2 1</ambient><diffuse>0.9 0.2 0.2 1</diffuse></material>
+      </visual>
+
+      <!-- Arm 3: Rear-Right (315 deg) -->
+      <visual name="arm_3_boom">
+        <pose>0.2546 -0.2546 0.05 0 1.5708 5.4978</pose>
+        <geometry><cylinder><radius>0.024</radius><length>0.7200</length></cylinder></geometry>
+        <material><ambient>0.1 0.1 0.12 1</ambient><diffuse>0.15 0.15 0.18 1</diffuse><specular>0.4 0.4 0.4 1</specular></material>
+      </visual>
+      <visual name="motor_3_mount">
+        <pose>0.5091 -0.5091 0.08 0 0 0</pose>
+        <geometry><cylinder><radius>0.06</radius><length>0.09</length></cylinder></geometry>
+        <material><ambient>0.2 0.22 0.25 1</ambient><diffuse>0.25 0.28 0.32 1</diffuse><specular>0.8 0.8 0.8 1</specular></material>
+      </visual>
+      <visual name="motor_3_spinner">
+        <pose>0.5091 -0.5091 0.135 0 0 0</pose>
+        <geometry><sphere><radius>0.026</radius></sphere></geometry>
+        <material><ambient>0.8 0.2 0.2 1</ambient><diffuse>0.9 0.2 0.2 1</diffuse></material>
+      </visual>
+    
+
+      <!-- Heavy-Duty Landing Gear Assembly (0.42m ground clearance) -->
+      <!-- Left Skid Tube -->
+      <visual name="skid_tube_left">
+        <pose>0 0.38 -0.22 1.5708 0 0</pose>
+        <geometry><cylinder><radius>0.022</radius><length>1.1</length></cylinder></geometry>
+        <material><ambient>0.1 0.1 0.1 1</ambient><diffuse>0.15 0.15 0.15 1</diffuse></material>
+      </visual>
+      <!-- Right Skid Tube -->
+      <visual name="skid_tube_right">
+        <pose>0 -0.38 -0.22 1.5708 0 0</pose>
+        <geometry><cylinder><radius>0.022</radius><length>1.1</length></cylinder></geometry>
+        <material><ambient>0.1 0.1 0.1 1</ambient><diffuse>0.15 0.15 0.15 1</diffuse></material>
+      </visual>
+      <!-- Left Strut Front & Rear -->
+      <visual name="strut_fl"><pose>0.3 0.35 -0.10 0 0.35 0</pose><geometry><cylinder><radius>0.016</radius><length>0.28</length></cylinder></geometry><material><ambient>0.2 0.2 0.2 1</ambient></material></visual>
+      <visual name="strut_rl"><pose>-0.3 0.35 -0.10 0 -0.35 0</pose><geometry><cylinder><radius>0.016</radius><length>0.28</length></cylinder></geometry><material><ambient>0.2 0.2 0.2 1</ambient></material></visual>
+      <visual name="strut_fr"><pose>0.3 -0.35 -0.10 0 0.35 0</pose><geometry><cylinder><radius>0.016</radius><length>0.28</length></cylinder></geometry><material><ambient>0.2 0.2 0.2 1</ambient></material></visual>
+      <visual name="strut_rr"><pose>-0.3 -0.35 -0.10 0 -0.35 0</pose><geometry><cylinder><radius>0.016</radius><length>0.28</length></cylinder></geometry><material><ambient>0.2 0.2 0.2 1</ambient></material></visual>
+
+      <!-- Stabilized Electro-Optical / Thermal Gimbal Pod -->
+      <!-- Gimbal Yoke / Base Mount -->
+      <visual name="gimbal_mount">
+        <pose>0.18 0 -0.06 0 0 0</pose>
+        <geometry><cylinder><radius>0.08</radius><length>0.05</length></cylinder></geometry>
+        <material><ambient>0.25 0.25 0.28 1</ambient><diffuse>0.3 0.3 0.35 1</diffuse></material>
+      </visual>
+      <!-- Spherical Gimbal Camera Ball -->
+      <visual name="gimbal_ball">
+        <pose>0.22 0 -0.14 0 0.2 0</pose>
+        <geometry><sphere><radius>0.11</radius></sphere></geometry>
+        <material><ambient>0.15 0.16 0.18 1</ambient><diffuse>0.2 0.22 0.25 1</diffuse><specular>0.7 0.7 0.8 1</specular></material>
+      </visual>
+      <!-- Visible Forward RGB Primary Optical Lens -->
+      <visual name="camera_lens_rgb">
+        <pose>0.32 0.03 -0.14 0 1.5708 0</pose>
+        <geometry><cylinder><radius>0.035</radius><length>0.03</length></cylinder></geometry>
+        <material><ambient>0.05 0.2 0.4 1</ambient><diffuse>0.1 0.4 0.7 1</diffuse><specular>0.95 0.95 1.0 1</specular></material>
+      </visual>
+      <!-- Germanium IR / Thermal Camera Lens (Gold/amber tint) -->
+      <visual name="camera_lens_thermal">
+        <pose>0.32 -0.04 -0.14 0 1.5708 0</pose>
+        <geometry><cylinder><radius>0.028</radius><length>0.03</length></cylinder></geometry>
+        <material><ambient>0.6 0.4 0.1 1</ambient><diffuse>0.8 0.55 0.15 1</diffuse><specular>0.9 0.8 0.4 1</specular></material>
+      </visual>
+      <!-- Downward Camera Lens Aperture -->
+      <visual name="camera_lens_downward">
+        <pose>0 0 -0.06 1.5708 0 0</pose>
+        <geometry><cylinder><radius>0.03</radius><length>0.02</length></cylinder></geometry>
+        <material><ambient>0.05 0.15 0.35 1</ambient><diffuse>0.1 0.3 0.6 1</diffuse></material>
+      </visual>
+
+      <!-- Navigation Safety LED Beacons -->
+      <!-- Left Port: Red LED -->
+      <visual name="led_port">
+        <pose>0 0.45 0.05 0 0 0</pose>
+        <geometry><sphere><radius>0.02</radius></sphere></geometry>
+        <material><ambient>1 0 0 1</ambient><diffuse>1 0 0 1</diffuse><emissive>1 0 0 1</emissive></material>
+      </visual>
+      <!-- Right Starboard: Green LED -->
+      <visual name="led_starboard">
+        <pose>0 -0.45 0.05 0 0 0</pose>
+        <geometry><sphere><radius>0.02</radius></sphere></geometry>
+        <material><ambient>0 1 0 1</ambient><diffuse>0 1 0 1</diffuse><emissive>0 1 0 1</emissive></material>
+      </visual>
+      <!-- Tail: White Strobe LED -->
+      <visual name="led_strobe">
+        <pose>-0.45 0 0.08 0 0 0</pose>
+        <geometry><sphere><radius>0.022</radius></sphere></geometry>
+        <material><ambient>1 1 1 1</ambient><diffuse>1 1 1 1</diffuse><emissive>1 1 1 1</emissive></material>
+      </visual>
+
+      <!-- ============================================== -->
+      <!-- SIMULATED SENSORS                              -->
+      <!-- ============================================== -->
+
+      <!-- 1. Forward-Facing RGB Camera Sensor -->
+      <sensor name="forward_camera" type="camera">
+        <pose>0.33 0 -0.14 0 0.25 0</pose>
+        <always_on>1</always_on>
+        <update_rate>20</update_rate>
+        <camera name="forward_camera">
+          <horizontal_fov>1.4</horizontal_fov>
+          <image>
+            <width>640</width>
+            <height>480</height>
+            <format>R8G8B8</format>
+          </image>
+          <clip>
+            <near>0.1</near>
+            <far>300</far>
+          </clip>
+        </camera>
+        <topic>/drone/camera/forward/image_raw</topic>
+      </sensor>
+
+      <!-- 2. Downward-Facing RGB Camera Sensor -->
+      <sensor name="downward_camera" type="camera">
+        <pose>0 0 -0.16 0 1.57079 0</pose>
+        <always_on>1</always_on>
+        <update_rate>20</update_rate>
+        <camera name="downward_camera">
+          <horizontal_fov>1.57079</horizontal_fov>
+          <image>
+            <width>640</width>
+            <height>480</height>
+            <format>R8G8B8</format>
+          </image>
+          <clip>
+            <near>0.1</near>
+            <far>300</far>
+          </clip>
+        </camera>
+        <topic>/drone/camera/downward/image_raw</topic>
+      </sensor>
+
+      <!-- 3. Inertial Measurement Unit (IMU) -->
+      <sensor name="imu_sensor" type="imu">
+        <pose>0 0 0.05 0 0 0</pose>
+        <always_on>1</always_on>
+        <update_rate>100</update_rate>
+        <topic>/drone/imu</topic>
+      </sensor>
+
+      <!-- 4. NavSat / GPS Sensor -->
+      <sensor name="navsat_sensor" type="navsat">
+        <pose>0 0 0.15 0 0 0</pose>
+        <always_on>1</always_on>
+        <update_rate>10</update_rate>
+        <topic>/drone/gps</topic>
+      </sensor>
+    </link>
+
+    <!-- ================================================================= -->
+    <!-- HIGH-SPEED ROTATING PROPELLER HUBS (4x QUADCOPTER ROTORS)         -->
+    <!-- ================================================================= -->
+    <!-- Rotor 0 (Front-Right at 45 deg, CCW) -->
+    <link name="rotor_0">
+      <pose>0.5091 0.5091 0.13 0 0 0</pose>
+      <inertial>
+        <mass>0.05</mass>
+        <inertia><ixx>0.0001</ixx><iyy>0.001</iyy><izz>0.001</izz></inertia>
+      </inertial>
+      <visual name="rotor_0_blade">
+        <geometry><box><size>0.62 0.05 0.008</size></box></geometry>
+        <material><ambient>0.15 0.15 0.18 1</ambient><diffuse>0.15 0.15 0.18 1</diffuse><specular>0.6 0.6 0.6 1</specular></material>
+      </visual>
+    </link>
+    <joint name="rotor_0_joint" type="revolute">
+      <parent>base_link</parent>
+      <child>rotor_0</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit><lower>-1e16</lower><upper>1e16</upper></limit>
+      </axis>
+    </joint>
+
+    <!-- Rotor 1 (Front-Left at 135 deg, CW) -->
+    <link name="rotor_1">
+      <pose>-0.5091 0.5091 0.13 0 0 0</pose>
+      <inertial>
+        <mass>0.05</mass>
+        <inertia><ixx>0.0001</ixx><iyy>0.001</iyy><izz>0.001</izz></inertia>
+      </inertial>
+      <visual name="rotor_1_blade">
+        <geometry><box><size>0.62 0.05 0.008</size></box></geometry>
+        <material><ambient>0.15 0.15 0.18 1</ambient><diffuse>0.15 0.15 0.18 1</diffuse><specular>0.6 0.6 0.6 1</specular></material>
+      </visual>
+    </link>
+    <joint name="rotor_1_joint" type="revolute">
+      <parent>base_link</parent>
+      <child>rotor_1</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit><lower>-1e16</lower><upper>1e16</upper></limit>
+      </axis>
+    </joint>
+
+    <!-- Rotor 2 (Rear-Left at 225 deg, CCW) -->
+    <link name="rotor_2">
+      <pose>-0.5091 -0.5091 0.13 0 0 0</pose>
+      <inertial>
+        <mass>0.05</mass>
+        <inertia><ixx>0.0001</ixx><iyy>0.001</iyy><izz>0.001</izz></inertia>
+      </inertial>
+      <visual name="rotor_2_blade">
+        <geometry><box><size>0.62 0.05 0.008</size></box></geometry>
+        <material><ambient>0.15 0.15 0.18 1</ambient><diffuse>0.15 0.15 0.18 1</diffuse><specular>0.6 0.6 0.6 1</specular></material>
+      </visual>
+    </link>
+    <joint name="rotor_2_joint" type="revolute">
+      <parent>base_link</parent>
+      <child>rotor_2</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit><lower>-1e16</lower><upper>1e16</upper></limit>
+      </axis>
+    </joint>
+
+    <!-- Rotor 3 (Rear-Right at 315 deg, CW) -->
+    <link name="rotor_3">
+      <pose>0.5091 -0.5091 0.13 0 0 0</pose>
+      <inertial>
+        <mass>0.05</mass>
+        <inertia><ixx>0.0001</ixx><iyy>0.001</iyy><izz>0.001</izz></inertia>
+      </inertial>
+      <visual name="rotor_3_blade">
+        <geometry><box><size>0.62 0.05 0.008</size></box></geometry>
+        <material><ambient>0.15 0.15 0.18 1</ambient><diffuse>0.15 0.15 0.18 1</diffuse><specular>0.6 0.6 0.6 1</specular></material>
+      </visual>
+    </link>
+    <joint name="rotor_3_joint" type="revolute">
+      <parent>base_link</parent>
+      <child>rotor_3</child>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit><lower>-1e16</lower><upper>1e16</upper></limit>
+      </axis>
+    </joint>
+
+    <!-- Quadcopter Rotor Velocity Controllers (Autonomous High-Speed Continuous Propeller Rotation) -->
+    <plugin filename="gz-sim-joint-controller-system" name="gz::sim::systems::JointController">
+      <joint_name>rotor_0_joint</joint_name>
+      <initial_velocity>85.0</initial_velocity>
+      <p_gain>5.0</p_gain>
+      <i_gain>0.1</i_gain>
+      <d_gain>0.01</d_gain>
+      <cmd_max>100</cmd_max>
+      <cmd_min>-100</cmd_min>
+    </plugin>
+    <plugin filename="gz-sim-joint-controller-system" name="gz::sim::systems::JointController">
+      <joint_name>rotor_1_joint</joint_name>
+      <initial_velocity>-85.0</initial_velocity>
+      <p_gain>5.0</p_gain>
+      <i_gain>0.1</i_gain>
+      <d_gain>0.01</d_gain>
+      <cmd_max>100</cmd_max>
+      <cmd_min>-100</cmd_min>
+    </plugin>
+    <plugin filename="gz-sim-joint-controller-system" name="gz::sim::systems::JointController">
+      <joint_name>rotor_2_joint</joint_name>
+      <initial_velocity>85.0</initial_velocity>
+      <p_gain>5.0</p_gain>
+      <i_gain>0.1</i_gain>
+      <d_gain>0.01</d_gain>
+      <cmd_max>100</cmd_max>
+      <cmd_min>-100</cmd_min>
+    </plugin>
+    <plugin filename="gz-sim-joint-controller-system" name="gz::sim::systems::JointController">
+      <joint_name>rotor_3_joint</joint_name>
+      <initial_velocity>-85.0</initial_velocity>
+      <p_gain>5.0</p_gain>
+      <i_gain>0.1</i_gain>
+      <d_gain>0.01</d_gain>
+      <cmd_max>100</cmd_max>
+      <cmd_min>-100</cmd_min>
+    </plugin>
+
+    <!-- Velocity Control Plugin (Twist cmd_vel linear/angular) -->
+    <plugin filename="gz-sim-velocity-control-system" name="gz::sim::systems::VelocityControl">
+      <link_name>base_link</link_name>
+      <topic>/drone/cmd_vel</topic>
+    </plugin>
+
+    <!-- Odometry Publisher Plugin -->
+    <plugin filename="gz-sim-odometry-publisher-system" name="gz::sim::systems::OdometryPublisher">
+      <odom_frame>odom</odom_frame>
+      <robot_base_frame>base_link</robot_base_frame>
+      <dimensions>3</dimensions>
+      <odom_topic>/drone/odometry</odom_topic>
+      <tf_topic>/drone/tf</tf_topic>
+      <update_rate>30</update_rate>
+    </plugin>
+  </model>
+</sdf>

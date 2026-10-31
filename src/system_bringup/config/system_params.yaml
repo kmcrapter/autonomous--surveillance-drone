@@ -1,0 +1,32 @@
+/**:
+  ros__parameters:
+    world_file: "border_surveillance.sdf"
+    drone_model: "surveillance_hexacopter"
+    rotor_span_m: 1.70
+    mass_kg: 12.5
+
+    # Flight parameters
+    default_altitude_m: 15.0
+    default_cruise_speed_ms: 4.5
+    max_speed_ms: 8.0
+    takeoff_speed_ms: 2.0
+    descend_speed_ms: 1.5
+
+    # Battery parameters
+    battery_capacity_wh: 555.0
+    nominal_voltage_v: 22.2
+    safety_reserve_pct: 20.0
+    charge_rate_pct_sec: 2.5
+
+    # Geofence parameters
+    geofence_min_x: -110.0
+    geofence_max_x: 110.0
+    geofence_min_y: -75.0
+    geofence_max_y: 105.0
+    geofence_max_z: 45.0
+
+    # Sensor update rates (Hz)
+    camera_forward_rate_hz: 20
+    camera_downward_rate_hz: 20
+    imu_rate_hz: 100
+    odometry_rate_hz: 30

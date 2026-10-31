@@ -1,0 +1,74 @@
+scenarios:
+  daytime_surveillance:
+    id: "SCN-01"
+    name: "Daytime Full Monitored Surveillance"
+    description: "Standard daytime patrol across perimeter Alpha, forest Bravo, river Charlie, and outpost Delta with nominal visibility and lighting."
+    lighting: "daylight_full"
+    fog_density: 0.001
+    active_zones: ["zone_alpha", "zone_bravo", "zone_charlie", "zone_delta"]
+    expected_outcome: "100% boustrophedon coverage completed with verified observation records."
+
+  nighttime_surveillance:
+    id: "SCN-02"
+    name: "Nighttime Low-Light Surveillance"
+    description: "Night surveillance operations testing Generation-3 NVG image intensification and thermal LWIR sensor pipelines."
+    lighting: "night_ambient"
+    fog_density: 0.002
+    active_zones: ["zone_alpha", "zone_bravo"]
+    expected_outcome: "Successful thermal and NVG target acquisition under low illumination."
+
+  pedestrian_movement:
+    id: "SCN-03"
+    name: "Monitored Perimeter Pedestrian Movement"
+    description: "Observation and tracking of human patrol guards along perimeter fence and access gates without hostile attribution."
+    target_category: "person"
+    target_location: [5.0, 22.0]
+    expected_outcome: "Person detected, tracked with ID, and logged for human operator review."
+
+  wildlife_observation:
+    id: "SCN-04"
+    name: "Sector Bravo Wildlife Tracking"
+    description: "Fauna monitoring in northern forest and riverbanks; verifies thermal signature contrast with cold foliage."
+    target_category: "wildlife"
+    target_location: [-55.0, 40.0]
+    expected_outcome: "Wildlife tracked and recorded in environmental database."
+
+  vehicle_movement:
+    id: "SCN-05"
+    name: "Northern Roadway Vehicle Movement"
+    description: "Surveillance of patrol trucks and emergency vehicles moving across access road and bridge."
+    target_category: "vehicle"
+    target_location: [0.0, 35.0]
+    expected_outcome: "Vehicle detected and tracked with accurate ground coordinate projection."
+
+  wildfire_smoke_hazard:
+    id: "SCN-06"
+    name: "Simulated Wildfire & Smoke Hazard"
+    description: "Observation of high-temperature flame core and smoke column in Sector Bravo; triggers thermal alert."
+    target_category: "fire"
+    target_location: [-65.0, 65.0]
+    expected_outcome: "Thermal anomaly detected with high-temperature heatmap signature."
+
+  low_battery_rth:
+    id: "SCN-07"
+    name: "Low-Battery Auto-RTH & Inductive Charging"
+    description: "Simulated power depletion during active survey; drone dynamically calculates return energy and aborts coverage to dock and recharge."
+    expected_outcome: "Autonomous transition to RETURNING -> LANDING -> CHARGING -> RESUMING."
+
+  camera_sensor_outage:
+    id: "SCN-08"
+    name: "Camera Sensor Outage & Fallback"
+    description: "Forward optical sensor degradation; verifies system degradation detection and downward survey fallback."
+    expected_outcome: "Sensor health flag updated to degraded, telemetry alerts operator."
+
+  telemetry_loss_recovery:
+    id: "SCN-09"
+    name: "Temporary Telemetry Loss & Failsafe"
+    description: "Simulated communication loss; drone holds station and initiates safe return if timeout exceeds limit."
+    expected_outcome: "Safe station-keeping and autonomous failsafe recovery."
+
+  full_mission_reporting:
+    id: "SCN-10"
+    name: "Full Mission with Automatic PDF/CSV Reporting"
+    description: "End-to-end multi-zone flight with persistent SQLite audit logging and PDF/CSV report generation."
+    expected_outcome: "Complete verified report and database persistence across restarts."
