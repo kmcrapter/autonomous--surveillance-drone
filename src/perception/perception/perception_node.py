@@ -126,11 +126,15 @@ class PerceptionNode(Node):
         frame = np.full((h, w, 3), 30, dtype=np.uint8)
         px, py, pz = self.drone_pos
         yaw = self.drone_yaw
+        pitch = 0.25
+        hfov = 1.4
 
-        # Calculate horizon position based on altitude and pitch
-        horizon_y = int(np.clip(h * 0.48 - (pz * 1.5), h * 0.15, h * 0.85))
+        # Calculate exact horizon position based on camera pitch
+        fx = (w / 2.0) / math.tan(hfov / 2.0)
+        fy = fx
+        horizon_y = int(np.clip((h / 2.0) - fy * math.tan(pitch), 40, h - 40))
 
-        # Sky gradient (dusk / daylight)
+        # Sky gradient (tactical dusk / surveillance daylight)
         for y in range(horizon_y):
             ratio = y / max(1, horizon_y)
             sky_b = int(140 - 50 * ratio)
@@ -138,7 +142,7 @@ class PerceptionNode(Node):
             sky_r = int(50 - 20 * ratio)
             frame[y, :] = [sky_b, sky_g, sky_r]
 
-        # Ground terrain with perspective grid lines
+        # Ground terrain with perspective shading
         for y in range(horizon_y, h):
             ratio = (y - horizon_y) / max(1, h - horizon_y)
             g_b = int(22 + 10 * ratio)
@@ -146,13 +150,13 @@ class PerceptionNode(Node):
             g_r = int(22 + 10 * ratio)
             frame[y, :] = [g_b, g_g, g_r]
 
-        # Render distant hill silhouettes
+        # Distant hill silhouettes
         shift_x = int((math.degrees(yaw) * 3.5) % w)
         hill_pts = np.array([
             [-100, horizon_y],
-            [120 - shift_x, horizon_y - int(35 + pz * 0.5)],
-            [280 - shift_x, horizon_y - int(55 + pz * 0.7)],
-            [440 - shift_x, horizon_y - int(25 + pz * 0.4)],
+            [120 - shift_x, horizon_y - int(35 + pz * 0.3)],
+            [280 - shift_x, horizon_y - int(55 + pz * 0.4)],
+            [440 - shift_x, horizon_y - int(25 + pz * 0.2)],
             [w + 100, horizon_y],
             [w + 100, horizon_y + 40],
             [-100, horizon_y + 40]
@@ -160,85 +164,86 @@ class PerceptionNode(Node):
         cv2.fillPoly(frame, [hill_pts], (35, 60, 32))
 
         # River channel ribbon crossing landscape
-        river_y = horizon_y + int(30 + pz * 1.8)
-        if 0 < river_y < h:
-            cv2.line(frame, (0, river_y), (w, river_y), (140, 95, 25), int(max(4, 18 - pz * 0.4)))
+        p_riv_left = ObjectDetectorTracker.project_world_to_pixel(-80.0, 60.0, 0.0, self.drone_pos, yaw, pitch, hfov, w, h)
+        p_riv_right = ObjectDetectorTracker.project_world_to_pixel(80.0, 60.0, 0.0, self.drone_pos, yaw, pitch, hfov, w, h)
+        if p_riv_left and p_riv_right:
+            cv2.line(frame, (int(p_riv_left[0]), int(p_riv_left[1])), (int(p_riv_right[0]), int(p_riv_right[1])), (140, 95, 25), 8, cv2.LINE_AA)
 
         # International Border Line Demarcation (Y = 32.0m)
-        border_dy = 32.0 - py
-        if 2.0 < border_dy < 85.0:
-            border_scr_y = horizon_y + int((border_dy * 2.4) * (h / 480.0))
-            if 0 < border_scr_y < h:
-                cv2.line(frame, (0, border_scr_y), (w, border_scr_y), (20, 220, 245), 4) # Yellow Hazard Ground Stripe
-                cv2.line(frame, (0, border_scr_y - 2), (w, border_scr_y - 2), (255, 255, 255), 1) # Boundary Line
-                cv2.putText(frame, "INTERNATIONAL BORDER LINE (COUNTRY A / COUNTRY B)", (16, border_scr_y - 6),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.4, (20, 220, 245), 1, cv2.LINE_AA)
+        p_b_left = ObjectDetectorTracker.project_world_to_pixel(-100.0, 32.0, 0.0, self.drone_pos, yaw, pitch, hfov, w, h)
+        p_b_right = ObjectDetectorTracker.project_world_to_pixel(100.0, 32.0, 0.0, self.drone_pos, yaw, pitch, hfov, w, h)
+        if p_b_left and p_b_right:
+            u1, v1 = int(p_b_left[0]), int(p_b_left[1])
+            u2, v2 = int(p_b_right[0]), int(p_b_right[1])
+            cv2.line(frame, (u1, v1), (u2, v2), (20, 220, 245), 3, cv2.LINE_AA)
+            cv2.putText(frame, "INTERNATIONAL BORDER LINE (COUNTRY A / COUNTRY B)",
+                        (max(16, min(w - 380, (u1 + u2) // 2 - 150)), max(20, min(h - 20, (v1 + v2) // 2 - 6))),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.40, (20, 220, 245), 1, cv2.LINE_AA)
 
-        # Dense Forest Trees & Vegetation Billboards across Sectors Bravo & Charlie
+        # Dense Forest Pine Trees in Sector Bravo & Charlie
         tree_locs = [
             (-40, 50), (-60, 65), (-75, 45), (-55, 35), (-65, 55),
             (-30, 60), (-45, 75), (-25, 40), (20, 45), (45, 70),
             (0, 35), (15, 65), (35, 55), (-10, 50), (60, 75)
         ]
         for tx, ty in tree_locs:
-            dx = tx - px
-            dy = ty - py
-            dist = math.sqrt(dx*dx + dy*dy)
-            if 4.0 < dist < 95.0:
-                ang = math.atan2(dy, dx) - yaw
-                while ang > math.pi: ang -= 2*math.pi
-                while ang < -math.pi: ang += 2*math.pi
-                if abs(ang) < 0.72:
-                    scr_x = int(w/2 + math.tan(ang) * (w/1.4))
-                    scr_y = horizon_y + int((dist * 2.2) * (h/480))
-                    tree_sz = int(max(8, (80.0 / dist) * 14))
-                    cv2.circle(frame, (scr_x, scr_y), tree_sz, (25, 75, 30), -1)
-                    cv2.line(frame, (scr_x, scr_y + tree_sz//2), (scr_x, scr_y + tree_sz), (20, 35, 45), 2)
+            p_tr = ObjectDetectorTracker.project_world_to_pixel(float(tx), float(ty), 0.0, self.drone_pos, yaw, pitch, hfov, w, h)
+            if p_tr:
+                tu, tv, td = p_tr
+                if -20 < tu < w + 20 and -20 < tv < h + 20:
+                    tree_sz = max(6, int(round(fy * (4.5 / td))))
+                    cv2.circle(frame, (int(tu), int(tv - tree_sz)), tree_sz, (25, 75, 30), -1)
+                    cv2.line(frame, (int(tu), int(tv)), (int(tu), int(tv - tree_sz)), (20, 35, 45), max(1, tree_sz // 4))
 
-        # 9 People (Men & Women) and 4 Wildlife Animals across All Zones
+        # Render People, Wildlife, Vehicles & Hazards with exact perspective scaling
         scene_actors = [
-            # Zone Alpha (Base & HQ Area)
-            (6.0, 20.0, "man", (0, 140, 255)),       # Man: Home Patrol Guard (High-Vis Orange)
-            (-10.0, -25.0, "woman", (200, 130, 40)), # Woman: Logistics Officer (Navy Blue)
-            (-15.0, 28.0, "woman", (35, 120, 45)),   # Woman: Border Officer (Tactical Olive)
-
-            # Zone Delta (Eastern Outpost Ridge & Watchtower)
-            (65.0, -15.0, "man", (45, 100, 50)),     # Man: Outpost Ridge Sentry (Military Camo)
-            (72.0, 5.0, "animal", (35, 80, 135)),    # Animal: Mountain Deer (Warm Tan Quadruped)
-
-            # Zone Bravo (Western Deep Pine Forest)
-            (-65.0, 50.0, "man", (30, 80, 140)),     # Man: Foreign Forest Hiker (Khaki Brown)
-            (-55.0, 42.0, "animal", (35, 80, 140)),  # Animal: Deer Stag (Warm Tan Quadruped)
-            (-45.0, 68.0, "animal", (40, 90, 150)),  # Animal: Deer Doe (Tan Quadruped)
-
-            # Zone Charlie (River Corridor, Roadway & Northern Border Ridge)
-            (15.0, 38.0, "man", (50, 50, 60)),       # Man: Foreign Crosser (Dark Charcoal)
-            (58.0, 74.0, "woman", (40, 20, 180)),   # Woman: High Ground Observer (Crimson Coat)
-            (42.0, 56.0, "woman", (220, 150, 20)),   # Woman: Riverbank Civilian (Cyan Blue)
-            (-8.0, 66.0, "man", (35, 95, 45)),       # Man: Northern Woodsman (Forest Green)
-            (-20.0, 62.0, "animal", (25, 60, 110))   # Animal: Forest Elk (Dark Tan Quadruped)
+            # Zone Alpha
+            (6.0, 20.0, "man", (0, 140, 255), (0.65, 1.80)),
+            (-10.0, -25.0, "woman", (200, 130, 40), (0.60, 1.72)),
+            (-15.0, 28.0, "woman", (35, 120, 45), (0.60, 1.74)),
+            # Zone Delta
+            (65.0, -15.0, "man", (45, 100, 50), (0.65, 1.82)),
+            (72.0, 5.0, "animal", (35, 80, 135), (1.40, 1.30)),
+            # Zone Bravo
+            (-65.0, 50.0, "man", (30, 80, 140), (0.65, 1.80)),
+            (-55.0, 42.0, "animal", (35, 80, 140), (1.60, 1.45)),
+            (-45.0, 68.0, "animal", (40, 90, 150), (1.35, 1.25)),
+            (-65.0, 65.0, "fire", (20, 140, 255), (6.0, 5.0)),
+            # Zone Charlie
+            (15.0, 38.0, "man", (50, 50, 60), (0.65, 1.80)),
+            (58.0, 74.0, "woman", (40, 20, 180), (0.60, 1.73)),
+            (42.0, 56.0, "woman", (220, 150, 20), (0.60, 1.70)),
+            (-8.0, 66.0, "man", (35, 95, 45), (0.68, 1.84)),
+            (-20.0, 62.0, "animal", (25, 60, 110), (2.10, 1.70)),
+            (0.0, 35.0, "vehicle", (30, 50, 120), (2.20, 1.85))
         ]
-        for ax, ay, atype, acolor in scene_actors:
-            dx = ax - px
-            dy = ay - py
-            dist = math.sqrt(dx*dx + dy*dy)
-            if 3.0 < dist < 85.0:
-                ang = math.atan2(dy, dx) - yaw
-                while ang > math.pi: ang -= 2*math.pi
-                while ang < -math.pi: ang += 2*math.pi
-                if abs(ang) < 0.65:
-                    ax_scr = int(w/2 + math.tan(ang) * (w/1.4))
-                    ay_scr = horizon_y + int((dist * 2.3) * (h/480))
-                    if 10 < ax_scr < w - 10 and 10 < ay_scr < h - 10:
-                        sz = max(8, int((60.0 / dist) * 14))
-                        if atype in ["man", "woman"]:
-                            # Render head and torso
-                            cv2.circle(frame, (ax_scr, ay_scr - sz), max(2, sz//3), (160, 180, 220), -1)
-                            cv2.rectangle(frame, (ax_scr - sz//3, ay_scr - sz), (ax_scr + sz//3, ay_scr), acolor, -1)
-                        else:
-                            # Render animal torso and head
-                            cv2.rectangle(frame, (ax_scr - sz, ay_scr - sz//2), (ax_scr + sz, ay_scr), acolor, -1)
-                            cv2.circle(frame, (ax_scr + sz, ay_scr - sz//2), max(2, sz//3), acolor, -1)
+
+        for ax, ay, atype, acolor, (rw, rh) in scene_actors:
+            proj = ObjectDetectorTracker.project_world_to_pixel(ax, ay, 0.0, self.drone_pos, yaw, pitch, hfov, w, h)
+            if proj:
+                au, av, dist = proj
+                if -30 < au < w + 30 and -30 < av < h + 30:
+                    bw = max(10, int(round(fx * (rw / dist))))
+                    bh = max(14, int(round(fy * (rh / dist))))
+                    x1 = int(au - bw // 2)
+                    y2 = int(av)
+                    y1 = int(av - bh)
+                    x2 = x1 + bw
+
+                    if atype in ["man", "woman"]:
+                        head_r = max(2, bh // 7)
+                        cv2.circle(frame, (int(au), y1 + head_r), head_r, (160, 180, 220), -1)
+                        cv2.rectangle(frame, (x1, y1 + head_r * 2), (x2, y2), acolor, -1)
+                    elif atype == "animal":
+                        cv2.rectangle(frame, (x1, y1 + bh // 3), (x2, y2), acolor, -1)
+                        cv2.circle(frame, (x2, y1 + bh // 3), max(3, bh // 5), acolor, -1)
+                    elif atype == "vehicle":
+                        cv2.rectangle(frame, (x1, y1 + bh // 3), (x2, y2), acolor, -1)
+                        cv2.rectangle(frame, (x1 + bw // 4, y1), (x2 - bw // 4, y1 + bh // 3), (50, 70, 150), -1)
+                        cv2.line(frame, (x1 + bw // 3, y1 - 2), (x2 - bw // 3, y1 - 2), (255, 100, 0), 2)
+                    elif atype == "fire":
+                        cv2.circle(frame, (int(au), int(av - bh // 2)), bw // 2, (0, 120, 255), -1)
+                        cv2.circle(frame, (int(au), int(av - bh // 2)), bw // 3, (0, 220, 255), -1)
 
         return frame
 
@@ -267,11 +272,11 @@ class PerceptionNode(Node):
         cv2.putText(annotated_rgb, f"{sensor_source_label} | {self.current_fps} FPS", (14, 24),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.48, (0, 230, 255), 1, cv2.LINE_AA)
 
-        # 3. Process Synthetic LWIR Thermal Feed
+        # 3. Process Synthetic LWIR Thermal Feed with Target Tracking & Temperature Radiometry
         thermal_frame = self.thermal.process_frame(raw_rgb, detections=tracked_dets)
 
-        # 4. Process Night-Vision Intensifier Feed
-        nvg_frame = self.night_vision.process_frame(raw_rgb)
+        # 4. Process Night-Vision Intensifier Feed with Phosphor Target Overlays & IR Luminescence
+        nvg_frame = self.night_vision.process_frame(raw_rgb, detections=tracked_dets)
 
         # 5. Process Downward Camera Feed
         if self.last_downward_frame is not None:
