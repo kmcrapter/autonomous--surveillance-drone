@@ -1,3 +1,0 @@
-id,mission_id,timestamp_iso,classification,category,label,territory,zone,track_id,confidence,world_x,world_y,camera_source,review_status,operator_notes
-EVT-1793468926163,MSN-1793468918,2026-10-31 23:18:46,WOMAN (Human Presence),person,Woman (Logistics Officer),HOME (Country A),Zone Alpha (Base Area),TRK-002,0.94,-11.6,-25.3,forward_rgb,CONFIRMED,Operator verified target
-EVT-1793468919463,MSN-1793468918,2026-10-31 23:18:39,MAN (Human Presence),person,Man (Home Patrol Guard),HOME (Country A),Zone Alpha (Base Area),TRK-001,0.94,6.0,20.0,forward_rgb,PENDING_REVIEW,Entity: Man (Home Patrol Guard) | Territory: HOME (Country A) | Border Status: AUTHORIZED_HOME_PATROL

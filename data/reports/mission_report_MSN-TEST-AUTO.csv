@@ -1,2 +1,0 @@
-id,mission_id,timestamp_iso,classification,category,label,territory,zone,track_id,confidence,world_x,world_y,camera_source,review_status,operator_notes
-EVT-TEST-AUTO,MSN-TEST-AUTO,2026-10-31 23:17:48,WILDLIFE (Animal),wildlife,Wildlife (Fauna),FOREIGN (Country B),Zone Bravo (Pine Forest),TRK-099,0.85,-50.0,40.0,forward_rgb,CONFIRMED,Operator verified target
