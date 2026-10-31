@@ -227,6 +227,16 @@ document.addEventListener('DOMContentLoaded', () => {
     flightStateText.textContent = state;
     flightStatePill.className = `hud-pill ${state === 'IDLE' ? 'pill-state-idle' : (state === 'SURVEYING' || state === 'TAKEOFF') ? 'pill-state-active' : 'pill-state-warning'}`;
     
+    // Sync flight control mode
+    if (telem.control_mode && typeof syncFlightModeUI === 'function') {
+      syncFlightModeUI(telem.control_mode);
+    }
+
+    // Sync surveillance pattern
+    if (telem.surveillance_pattern && typeof syncPatternUI === 'function') {
+      syncPatternUI(telem.surveillance_pattern);
+    }
+
     activeZoneText.textContent = (telem.current_zone || "ZONE ALPHA").toUpperCase();
     missionTimeText.textContent = formatTime(telem.mission_duration_sec || 0);
 
@@ -417,13 +427,32 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // 3. Camera Layout Switcher
+  // 3. Camera Layout Switcher & 5-Camera Array Controls
   const layoutButtons = document.querySelectorAll('.btn-toggle');
   const cameraViewports = document.getElementById('cameraViewports');
   const boxOverview = document.getElementById('camBoxOverview');
   const boxForward = document.getElementById('camBoxForward');
   const boxThermal = document.getElementById('camBoxThermal');
   const boxNvg = document.getElementById('camBoxNvg');
+  const boxDownward = document.getElementById('camBoxDownward');
+  const boxRear = document.getElementById('camBoxRear');
+  const boxLeft = document.getElementById('camBoxLeft');
+  const boxRight = document.getElementById('camBoxRight');
+
+  const allCamBoxes = [boxOverview, boxForward, boxThermal, boxNvg, boxDownward, boxRear, boxLeft, boxRight];
+
+  function showCamBoxes(activeBoxes, viewClass = 'single-view') {
+    if (!cameraViewports) return;
+    cameraViewports.className = `camera-viewports ${viewClass}`;
+    allCamBoxes.forEach(b => {
+      if (!b) return;
+      if (activeBoxes.includes(b)) {
+        b.classList.remove('hidden');
+      } else {
+        b.classList.add('hidden');
+      }
+    });
+  }
 
   layoutButtons.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -431,37 +460,206 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.classList.add('active');
       const layout = btn.dataset.layout;
 
-      // Reset hidden states
-      [boxOverview, boxForward, boxThermal, boxNvg].forEach(b => b && b.classList.remove('hidden'));
-
       if (layout === 'dual') {
-        cameraViewports.className = 'camera-viewports dual-view';
-        if (boxThermal) boxThermal.classList.add('hidden');
-        if (boxNvg) boxNvg.classList.add('hidden');
+        showCamBoxes([boxOverview, boxForward], 'dual-view');
       } else if (layout === 'overview') {
-        cameraViewports.className = 'camera-viewports single-view';
-        if (boxForward) boxForward.classList.add('hidden');
-        if (boxThermal) boxThermal.classList.add('hidden');
-        if (boxNvg) boxNvg.classList.add('hidden');
+        showCamBoxes([boxOverview], 'single-view');
       } else if (layout === 'drone') {
-        cameraViewports.className = 'camera-viewports single-view';
-        if (boxOverview) boxOverview.classList.add('hidden');
-        if (boxThermal) boxThermal.classList.add('hidden');
-        if (boxNvg) boxNvg.classList.add('hidden');
+        showCamBoxes([boxForward], 'single-view');
+      } else if (layout === 'downward') {
+        showCamBoxes([boxDownward], 'single-view');
+      } else if (layout === 'rear') {
+        showCamBoxes([boxRear], 'single-view');
+      } else if (layout === 'left') {
+        showCamBoxes([boxLeft], 'single-view');
+      } else if (layout === 'right') {
+        showCamBoxes([boxRight], 'single-view');
       } else if (layout === 'thermal') {
-        cameraViewports.className = 'camera-viewports single-view';
-        if (boxOverview) boxOverview.classList.add('hidden');
-        if (boxForward) boxForward.classList.add('hidden');
-        if (boxNvg) boxNvg.classList.add('hidden');
+        showCamBoxes([boxThermal], 'single-view');
       } else if (layout === 'nvg') {
-        cameraViewports.className = 'camera-viewports single-view';
-        if (boxOverview) boxOverview.classList.add('hidden');
-        if (boxForward) boxForward.classList.add('hidden');
-        if (boxThermal) boxThermal.classList.add('hidden');
+        showCamBoxes([boxNvg], 'single-view');
       } else if (layout === 'quad') {
-        cameraViewports.className = 'camera-viewports quad-view';
+        showCamBoxes([boxOverview, boxForward, boxThermal, boxNvg], 'quad-view');
+      } else if (layout === 'pentagrid') {
+        showCamBoxes([boxForward, boxRear, boxLeft, boxRight, boxDownward], 'pentagrid-view');
       }
     });
+  });
+
+  // 3b. Flight Mode, Pattern Selection & Remote Teleop Controls
+  const btnModeAuto = document.getElementById('btnModeAuto');
+  const btnModeManual = document.getElementById('btnModeManual');
+  const teleopDock = document.getElementById('teleopDock');
+  const patternSelect = document.getElementById('patternSelect');
+  const teleopSpeedSlider = document.getElementById('teleopSpeedSlider');
+  const teleopSpeedVal = document.getElementById('teleopSpeedVal');
+
+  let currentFlightMode = 'AUTONOMOUS';
+
+  function syncFlightModeUI(mode) {
+    if (currentFlightMode === mode) return;
+    currentFlightMode = mode;
+    if (mode === 'MANUAL_REMOTE') {
+      btnModeManual?.classList.add('active');
+      btnModeAuto?.classList.remove('active');
+      teleopDock?.classList.remove('hidden');
+    } else {
+      btnModeAuto?.classList.add('active');
+      btnModeManual?.classList.remove('active');
+      teleopDock?.classList.add('hidden');
+    }
+  }
+
+  function syncPatternUI(pattern) {
+    if (patternSelect && document.activeElement !== patternSelect && patternSelect.value !== pattern) {
+      patternSelect.value = pattern;
+    }
+  }
+
+  if (btnModeAuto) {
+    btnModeAuto.addEventListener('click', () => {
+      syncFlightModeUI('AUTONOMOUS');
+      dispatchCommand('SET_MODE', { mode: 'AUTONOMOUS' });
+    });
+  }
+
+  if (btnModeManual) {
+    btnModeManual.addEventListener('click', () => {
+      syncFlightModeUI('MANUAL_REMOTE');
+      dispatchCommand('SET_MODE', { mode: 'MANUAL_REMOTE' });
+    });
+  }
+
+  if (patternSelect) {
+    patternSelect.addEventListener('change', () => {
+      const chosen = patternSelect.value;
+      dispatchCommand('SET_PATTERN', { pattern: chosen });
+      plannedPatternPolyline.setLatLngs([]);
+    });
+  }
+
+  if (teleopSpeedSlider && teleopSpeedVal) {
+    teleopSpeedSlider.addEventListener('input', () => {
+      teleopSpeedVal.textContent = parseFloat(teleopSpeedSlider.value).toFixed(1);
+    });
+  }
+
+  async function sendTeleop(vx, vy, vz, vyaw) {
+    try {
+      await fetch('/api/teleop', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          linear_x: vx,
+          linear_y: vy,
+          linear_z: vz,
+          angular_z: vyaw
+        })
+      });
+    } catch (err) {
+      console.error("Teleop dispatch error:", err);
+    }
+  }
+
+  function getTeleopSpeed() {
+    return parseFloat(teleopSpeedSlider?.value || 3.5);
+  }
+
+  const teleopBtnCommands = {
+    'tpForward': () => sendTeleop(getTeleopSpeed(), 0.0, 0.0, 0.0),
+    'tpBack': () => sendTeleop(-getTeleopSpeed(), 0.0, 0.0, 0.0),
+    'tpLeft': () => sendTeleop(0.0, getTeleopSpeed(), 0.0, 0.0),
+    'tpRight': () => sendTeleop(0.0, -getTeleopSpeed(), 0.0, 0.0),
+    'tpUp': () => sendTeleop(0.0, 0.0, 2.0, 0.0),
+    'tpDown': () => sendTeleop(0.0, 0.0, -2.0, 0.0),
+    'tpYawLeft': () => sendTeleop(0.0, 0.0, 0.0, 0.8),
+    'tpYawRight': () => sendTeleop(0.0, 0.0, 0.0, -0.8),
+    'tpBrake': () => sendTeleop(0.0, 0.0, 0.0, 0.0)
+  };
+
+  Object.entries(teleopBtnCommands).forEach(([id, fn]) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    let repeatTimer = null;
+
+    const onStart = (e) => {
+      e.preventDefault();
+      el.classList.add('pressing');
+      fn();
+      if (id !== 'tpBrake') {
+        repeatTimer = setInterval(fn, 150);
+      }
+    };
+
+    const onEnd = () => {
+      el.classList.remove('pressing');
+      if (repeatTimer) {
+        clearInterval(repeatTimer);
+        repeatTimer = null;
+      }
+      sendTeleop(0.0, 0.0, 0.0, 0.0);
+    };
+
+    el.addEventListener('mousedown', onStart);
+    el.addEventListener('mouseup', onEnd);
+    el.addEventListener('mouseleave', onEnd);
+    el.addEventListener('touchstart', onStart, { passive: false });
+    el.addEventListener('touchend', onEnd);
+  });
+
+  const pressedKeys = new Set();
+  let keyRepeatTimer = null;
+
+  function handleKeyVelocity() {
+    if (pressedKeys.size === 0) {
+      sendTeleop(0.0, 0.0, 0.0, 0.0);
+      return;
+    }
+    const spd = getTeleopSpeed();
+    let vx = 0.0, vy = 0.0, vz = 0.0, vyaw = 0.0;
+    if (pressedKeys.has('KeyW')) vx += spd;
+    if (pressedKeys.has('KeyS')) vx -= spd;
+    if (pressedKeys.has('KeyA')) vy += spd;
+    if (pressedKeys.has('KeyD')) vy -= spd;
+    if (pressedKeys.has('KeyI')) vz += 2.0;
+    if (pressedKeys.has('KeyK')) vz -= 2.0;
+    if (pressedKeys.has('KeyJ')) vyaw += 0.8;
+    if (pressedKeys.has('KeyL')) vyaw -= 0.8;
+    if (pressedKeys.has('Space')) {
+      vx = 0.0; vy = 0.0; vz = 0.0; vyaw = 0.0;
+    }
+    sendTeleop(vx, vy, vz, vyaw);
+  }
+
+  window.addEventListener('keydown', (e) => {
+    if (['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) return;
+    const hotkeys = ['KeyW', 'KeyS', 'KeyA', 'KeyD', 'KeyI', 'KeyK', 'KeyJ', 'KeyL', 'Space'];
+    if (hotkeys.includes(e.code)) {
+      e.preventDefault();
+      if (!pressedKeys.has(e.code)) {
+        pressedKeys.add(e.code);
+        if (!keyRepeatTimer) {
+          handleKeyVelocity();
+          keyRepeatTimer = setInterval(handleKeyVelocity, 150);
+        }
+      }
+    }
+  });
+
+  window.addEventListener('keyup', (e) => {
+    if (['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) return;
+    const hotkeys = ['KeyW', 'KeyS', 'KeyA', 'KeyD', 'KeyI', 'KeyK', 'KeyJ', 'KeyL', 'Space'];
+    if (hotkeys.includes(e.code)) {
+      e.preventDefault();
+      pressedKeys.delete(e.code);
+      if (pressedKeys.size === 0 && keyRepeatTimer) {
+        clearInterval(keyRepeatTimer);
+        keyRepeatTimer = null;
+        sendTeleop(0.0, 0.0, 0.0, 0.0);
+      } else {
+        handleKeyVelocity();
+      }
+    }
   });
 
   // 4. Mission Action Controls

@@ -254,6 +254,66 @@
         <topic>/drone/camera/downward/image_raw</topic>
       </sensor>
 
+      <!-- 3. Rear-Facing RGB Camera Sensor -->
+      <sensor name="rear_camera" type="camera">
+        <pose>-0.33 0 -0.14 0 0.25 3.14159</pose>
+        <always_on>1</always_on>
+        <update_rate>20</update_rate>
+        <camera name="rear_camera">
+          <horizontal_fov>1.4</horizontal_fov>
+          <image>
+            <width>640</width>
+            <height>480</height>
+            <format>R8G8B8</format>
+          </image>
+          <clip>
+            <near>0.1</near>
+            <far>300</far>
+          </clip>
+        </camera>
+        <topic>/drone/camera/rear/image_raw</topic>
+      </sensor>
+
+      <!-- 4. Left-Facing RGB Camera Sensor -->
+      <sensor name="left_camera" type="camera">
+        <pose>0 0.33 -0.14 0 0.25 1.57079</pose>
+        <always_on>1</always_on>
+        <update_rate>20</update_rate>
+        <camera name="left_camera">
+          <horizontal_fov>1.4</horizontal_fov>
+          <image>
+            <width>640</width>
+            <height>480</height>
+            <format>R8G8B8</format>
+          </image>
+          <clip>
+            <near>0.1</near>
+            <far>300</far>
+          </clip>
+        </camera>
+        <topic>/drone/camera/left/image_raw</topic>
+      </sensor>
+
+      <!-- 5. Right-Facing RGB Camera Sensor -->
+      <sensor name="right_camera" type="camera">
+        <pose>0 -0.33 -0.14 0 0.25 -1.57079</pose>
+        <always_on>1</always_on>
+        <update_rate>20</update_rate>
+        <camera name="right_camera">
+          <horizontal_fov>1.4</horizontal_fov>
+          <image>
+            <width>640</width>
+            <height>480</height>
+            <format>R8G8B8</format>
+          </image>
+          <clip>
+            <near>0.1</near>
+            <far>300</far>
+          </clip>
+        </camera>
+        <topic>/drone/camera/right/image_raw</topic>
+      </sensor>
+
       <!-- 3. Inertial Measurement Unit (IMU) -->
       <sensor name="imu_sensor" type="imu">
         <pose>0 0 0.05 0 0 0</pose>

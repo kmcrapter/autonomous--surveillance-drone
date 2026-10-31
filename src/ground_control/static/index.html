@@ -226,8 +226,12 @@
             <span class="panel-title">LIVE GAZEBO SENSOR STREAMS</span>
             <div class="layout-toggles">
               <button class="btn-toggle active" data-layout="dual">DUAL CAM</button>
-              <button class="btn-toggle" data-layout="overview">OVERVIEW</button>
-              <button class="btn-toggle" data-layout="drone">DRONE RGB</button>
+              <button class="btn-toggle" data-layout="pentagrid">5-CAM ARRAY (360°+NADIR)</button>
+              <button class="btn-toggle" data-layout="drone">FORWARD</button>
+              <button class="btn-toggle" data-layout="downward">DOWNWARD NADIR</button>
+              <button class="btn-toggle" data-layout="rear">REAR AFT</button>
+              <button class="btn-toggle" data-layout="left">PORT FLANK</button>
+              <button class="btn-toggle" data-layout="right">STARBOARD</button>
               <button class="btn-toggle" data-layout="thermal">THERMAL LWIR</button>
               <button class="btn-toggle" data-layout="nvg">GEN-3 NVG</button>
               <button class="btn-toggle" data-layout="quad">QUAD GRID</button>
@@ -284,6 +288,50 @@
               <img id="streamNvgImg" src="/api/stream/nvg" alt="Gen-3 Night Vision Stream">
             </div>
           </div>
+
+          <!-- Viewport 5: Downward Nadir Under-Drone Survey Camera -->
+          <div class="cam-box hidden" id="camBoxDownward">
+            <div class="cam-banner">
+              <span class="cam-name">CAM-5 DOWNWARD NADIR (UNDER DRONE)</span>
+              <span class="cam-live-indicator">● 90° DOWN</span>
+            </div>
+            <div class="cam-img-wrap">
+              <img id="streamDownwardImg" src="/api/stream/downward" alt="Downward Nadir Camera Stream">
+            </div>
+          </div>
+
+          <!-- Viewport 6: Rear Aft 180° Camera -->
+          <div class="cam-box hidden" id="camBoxRear">
+            <div class="cam-banner">
+              <span class="cam-name">CAM-2 REAR AFT (180° REVERSE)</span>
+              <span class="cam-live-indicator">● 180° AFT</span>
+            </div>
+            <div class="cam-img-wrap">
+              <img id="streamRearImg" src="/api/stream/rear" alt="Rear Aft Camera Stream">
+            </div>
+          </div>
+
+          <!-- Viewport 7: Port Left Flank 270° Camera -->
+          <div class="cam-box hidden" id="camBoxLeft">
+            <div class="cam-banner">
+              <span class="cam-name">CAM-3 PORT FLANK (270° LEFT)</span>
+              <span class="cam-live-indicator">● 270° PORT</span>
+            </div>
+            <div class="cam-img-wrap">
+              <img id="streamLeftImg" src="/api/stream/left" alt="Port Left Camera Stream">
+            </div>
+          </div>
+
+          <!-- Viewport 8: Starboard Right Flank 90° Camera -->
+          <div class="cam-box hidden" id="camBoxRight">
+            <div class="cam-banner">
+              <span class="cam-name">CAM-4 STARBOARD FLANK (90° RIGHT)</span>
+              <span class="cam-live-indicator">● 90° STBD</span>
+            </div>
+            <div class="cam-img-wrap">
+              <img id="streamRightImg" src="/api/stream/right" alt="Starboard Right Camera Stream">
+            </div>
+          </div>
         </div>
       </div>
 
@@ -335,6 +383,73 @@
             <option value="wildfire_hazard">6. Wildfire Thermal Hazard Alert</option>
             <option value="battery_rth">7. Low-Battery Auto-RTH &amp; Fast-Charging</option>
           </select>
+        </div>
+
+        <!-- Flight Mode & Surveillance Pattern Controls -->
+        <div class="flight-mode-selector">
+          <span class="mode-label">FLIGHT CONTROL:</span>
+          <div class="mode-btn-group">
+            <button class="btn-mode active" id="btnModeAuto" data-mode="AUTONOMOUS">⚡ AUTONOMOUS</button>
+            <button class="btn-mode" id="btnModeManual" data-mode="MANUAL_REMOTE">🎮 MANUAL REMOTE</button>
+          </div>
+        </div>
+
+        <div class="pattern-selector">
+          <label for="patternSelect">SURVEILLANCE PATTERN:</label>
+          <select id="patternSelect" class="form-select">
+            <option value="boustrophedon">Boustrophedon Lawnmower Grid</option>
+            <option value="perimeter">Perimeter Sovereign Border Patrol</option>
+            <option value="spiral">Expanding Spiral Search</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Remote Manual Teleoperation Control Dock -->
+      <div class="teleop-dock hidden" id="teleopDock">
+        <div class="teleop-header">
+          <div class="teleop-title">
+            <span class="indicator-dot dot-live"></span>
+            REMOTE PILOT TELEOPERATION DOCK (MANUAL CONTROL)
+          </div>
+          <div class="teleop-status">
+            <span>KEYBOARD: <span class="text-cyan">W/S (Pitch) | A/D (Roll) | I/K (Alt) | J/L (Yaw) | Space (Hover)</span></span>
+            <span class="border-guard-tag">SOVEREIGN GEOFENCE ACTIVE (Y &le; 28.5m)</span>
+          </div>
+        </div>
+        <div class="teleop-controls-row">
+          <!-- Directional Pad (Forward, Backward, Left, Right) -->
+          <div class="teleop-group">
+            <div class="teleop-subheading">HORIZONTAL TRANSLATION</div>
+            <div class="dpad-grid">
+              <div></div>
+              <button class="teleop-btn" id="tpForward" data-cmd="forward">▲ FWD (W)</button>
+              <div></div>
+              <button class="teleop-btn" id="tpLeft" data-cmd="left">◄ LEFT (A)</button>
+              <button class="teleop-btn btn-brake" id="tpBrake" data-cmd="brake">🛑 HOVER</button>
+              <button class="teleop-btn" id="tpRight" data-cmd="right">► RGHT (D)</button>
+              <div></div>
+              <button class="teleop-btn" id="tpBack" data-cmd="back">▼ BACK (S)</button>
+              <div></div>
+            </div>
+          </div>
+
+          <!-- Altitude & Yaw Heading -->
+          <div class="teleop-group">
+            <div class="teleop-subheading">ALTITUDE &amp; YAW HEADING</div>
+            <div class="alt-yaw-grid">
+              <button class="teleop-btn" id="tpUp" data-cmd="up">⮝ CLIMB (I)</button>
+              <button class="teleop-btn" id="tpDown" data-cmd="down">⮟ DESCEND (K)</button>
+              <button class="teleop-btn" id="tpYawLeft" data-cmd="yaw_left">↺ YAW L (J)</button>
+              <button class="teleop-btn" id="tpYawRight" data-cmd="yaw_right">↻ YAW R (L)</button>
+            </div>
+          </div>
+
+          <!-- Pilot Flight Speed Slider -->
+          <div class="teleop-group teleop-speed-group">
+            <div class="teleop-subheading">FLIGHT SPEED: <span id="teleopSpeedVal" class="text-emerald">3.5</span> m/s</div>
+            <input type="range" id="teleopSpeedSlider" min="1.0" max="7.0" step="0.5" value="3.5" class="teleop-slider">
+            <div class="teleop-hint">Click &amp; hold buttons or use keyboard keys. Release to hover. Strict safety limits prevent crossing border line (Y &gt; 28.5m).</div>
+          </div>
         </div>
       </div>
     </section>

@@ -134,16 +134,41 @@ def run_tests():
                     rev_res = json.loads(rev_resp.read().decode('utf-8'))
                     assert_test(rev_res.get("status") == "updated", f"Operator triage confirmed event {ev_id}")
 
-        # I. Live Video Feeds (Overview, Forward RGB, Thermal, NVG)
-        print(f"\n{BLUE}[9/10] Live Multi-Sensor Video Feeds (MJPEG Headers){RESET}")
-        for endpoint in ["overview", "forward", "thermal", "nvg", "downward"]:
+        # I. Live Video Feeds (Overview, Forward RGB, Thermal, NVG, Downward, Rear, Left, Right)
+        print(f"\n{BLUE}[9/11] Live Multi-Sensor Video Feeds (MJPEG Headers){RESET}")
+        for endpoint in ["overview", "forward", "thermal", "nvg", "downward", "rear", "left", "right"]:
             req = urllib.request.Request(f"{base_url}/api/stream/{endpoint}")
             with urllib.request.urlopen(req) as resp:
                 content_type = resp.headers.get("Content-Type", "")
                 assert_test("multipart/x-mixed-replace" in content_type, f"Camera endpoint '/api/stream/{endpoint}' active ({content_type})")
 
-        # J. Cryptographic PDF and CSV Audit Reports
-        print(f"\n{BLUE}[10/10] Cryptographic Mission Audit PDF & CSV Report Downloads{RESET}")
+        # J. Flight Control Mode, Pattern & Remote Teleop Endpoints
+        print(f"\n{BLUE}[10/11] Dual Flight Control Modes, Surveillance Patterns & Remote Teleoperation{RESET}")
+        # Test mode switch
+        for mode in ["MANUAL_REMOTE", "AUTONOMOUS"]:
+            payload = json.dumps({"action": "SET_MODE", "params": {"mode": mode}}).encode('utf-8')
+            req = urllib.request.Request(f"{base_url}/api/command", data=payload, headers={"Content-Type": "application/json"})
+            with urllib.request.urlopen(req) as resp:
+                res = json.loads(resp.read().decode('utf-8'))
+                assert_test(res.get("status") == "dispatched", f"Command SET_MODE to '{mode}' dispatched")
+
+        # Test pattern switch
+        for pat in ["boustrophedon", "perimeter", "spiral"]:
+            payload = json.dumps({"action": "SET_PATTERN", "params": {"pattern": pat}}).encode('utf-8')
+            req = urllib.request.Request(f"{base_url}/api/command", data=payload, headers={"Content-Type": "application/json"})
+            with urllib.request.urlopen(req) as resp:
+                res = json.loads(resp.read().decode('utf-8'))
+                assert_test(res.get("status") == "dispatched", f"Command SET_PATTERN to '{pat}' dispatched")
+
+        # Test teleop API
+        teleop_payload = json.dumps({"linear_x": 2.5, "linear_y": 0.0, "linear_z": 1.0, "angular_z": 0.5}).encode('utf-8')
+        req = urllib.request.Request(f"{base_url}/api/teleop", data=teleop_payload, headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(req) as resp:
+            t_res = json.loads(resp.read().decode('utf-8'))
+            assert_test(t_res.get("status") in ["ok", "dispatched"], "Remote teleoperation velocity command accepted")
+
+        # K. Cryptographic PDF and CSV Audit Reports
+        print(f"\n{BLUE}[11/11] Cryptographic Mission Audit PDF & CSV Report Downloads{RESET}")
         req = urllib.request.Request(f"{base_url}/api/reports/pdf")
         with urllib.request.urlopen(req) as resp:
             pdf_data = resp.read()

@@ -169,8 +169,9 @@ class ObjectDetectorTracker:
                         frame: np.ndarray,
                         drone_pos: Tuple[float, float, float],
                         drone_yaw: float,
+                        cam_pitch: float = 0.25,
                         camera_source: str = "forward_rgb") -> List[Dict[str, Any]]:
-        """Multi-class object detection and tracking with exact perspective projection."""
+        """Multi-class object detection and tracking with exact perspective projection across any camera angle."""
         if frame is None or frame.size == 0:
             return []
 
@@ -208,7 +209,7 @@ class ObjectDetectorTracker:
             proj = self.project_world_to_pixel(
                 ax, ay, 0.0,
                 drone_pos, drone_yaw,
-                cam_pitch=0.25, cam_hfov=1.4,
+                cam_pitch=cam_pitch, cam_hfov=1.4,
                 img_w=w, img_h=h
             )
             if proj is None:

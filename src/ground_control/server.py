@@ -46,6 +46,9 @@ LIVE_OVERVIEW_PATH = os.path.join(DB_DIR, "live_world_overview.jpg")
 LIVE_THERMAL_PATH = os.path.join(DB_DIR, "live_thermal.jpg")
 LIVE_NVG_PATH = os.path.join(DB_DIR, "live_nvg.jpg")
 LIVE_DOWNWARD_PATH = os.path.join(DB_DIR, "live_downward_rgb.jpg")
+LIVE_REAR_PATH = os.path.join(DB_DIR, "live_rear_rgb.jpg")
+LIVE_LEFT_PATH = os.path.join(DB_DIR, "live_left_rgb.jpg")
+LIVE_RIGHT_PATH = os.path.join(DB_DIR, "live_right_rgb.jpg")
 CAMERA_STATUS_PATH = os.path.join(DB_DIR, "camera_status.json")
 
 app = FastAPI(title="AeroGuard 3D GCS", version="2.5.0")
@@ -94,9 +97,27 @@ def init_camera_buffers():
 
     if not os.path.exists(LIVE_DOWNWARD_PATH) or os.path.getsize(LIVE_DOWNWARD_PATH) < 100:
         frame = np.full((h, w, 3), 25, dtype=np.uint8)
-        cv2.putText(frame, "CAM-2 DOWNWARD NADIR [ONLINE]", (20, 30),
+        cv2.putText(frame, "CAM-5 DOWNWARD NADIR [ONLINE]", (20, 30),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 180), 1, cv2.LINE_AA)
         cv2.imwrite(LIVE_DOWNWARD_PATH, frame)
+
+    if not os.path.exists(LIVE_REAR_PATH) or os.path.getsize(LIVE_REAR_PATH) < 100:
+        frame = np.full((h, w, 3), 30, dtype=np.uint8)
+        cv2.putText(frame, "CAM-2 REAR AFT 180 [ONLINE]", (20, 30),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 210, 255), 1, cv2.LINE_AA)
+        cv2.imwrite(LIVE_REAR_PATH, frame)
+
+    if not os.path.exists(LIVE_LEFT_PATH) or os.path.getsize(LIVE_LEFT_PATH) < 100:
+        frame = np.full((h, w, 3), 30, dtype=np.uint8)
+        cv2.putText(frame, "CAM-3 PORT FLANK 270 [ONLINE]", (20, 30),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 240, 180), 1, cv2.LINE_AA)
+        cv2.imwrite(LIVE_LEFT_PATH, frame)
+
+    if not os.path.exists(LIVE_RIGHT_PATH) or os.path.getsize(LIVE_RIGHT_PATH) < 100:
+        frame = np.full((h, w, 3), 30, dtype=np.uint8)
+        cv2.putText(frame, "CAM-4 STARBOARD FLANK 90 [ONLINE]", (20, 30),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 240, 180), 1, cv2.LINE_AA)
+        cv2.imwrite(LIVE_RIGHT_PATH, frame)
 
 init_camera_buffers()
 
@@ -287,6 +308,48 @@ def stream_downward():
         mjpeg_frame_generator(LIVE_DOWNWARD_PATH, "DOWNWARD NADIR SURVEY CAMERA [CONNECTING...]"),
         media_type="multipart/x-mixed-replace; boundary=frame"
     )
+
+@app.get("/api/stream/rear")
+def stream_rear():
+    """Live MJPEG stream of Rear Aft 180 Camera."""
+    return StreamingResponse(
+        mjpeg_frame_generator(LIVE_REAR_PATH, "REAR AFT 180 CAMERA [CONNECTING...]"),
+        media_type="multipart/x-mixed-replace; boundary=frame"
+    )
+
+@app.get("/api/stream/left")
+def stream_left():
+    """Live MJPEG stream of Port Left Flank 270 Camera."""
+    return StreamingResponse(
+        mjpeg_frame_generator(LIVE_LEFT_PATH, "PORT LEFT FLANK 270 CAMERA [CONNECTING...]"),
+        media_type="multipart/x-mixed-replace; boundary=frame"
+    )
+
+@app.get("/api/stream/right")
+def stream_right():
+    """Live MJPEG stream of Starboard Right Flank 90 Camera."""
+    return StreamingResponse(
+        mjpeg_frame_generator(LIVE_RIGHT_PATH, "STARBOARD RIGHT FLANK 90 CAMERA [CONNECTING...]"),
+        media_type="multipart/x-mixed-replace; boundary=frame"
+    )
+
+@app.post("/api/teleop")
+def remote_teleop(payload: Dict[str, Any] = Body(...)):
+    """Dispatches real-time remote teleoperation control command."""
+    vx = float(payload.get("vx", payload.get("linear_x", 0.0)))
+    vy = float(payload.get("vy", payload.get("linear_y", 0.0)))
+    vz = float(payload.get("vz", payload.get("linear_z", 0.0)))
+    yaw_rate = float(payload.get("yaw_rate", payload.get("angular_z", 0.0)))
+    queue_data = {
+        "action": "TELEOP",
+        "timestamp": time.time(),
+        "params": {"vx": vx, "vy": vy, "vz": vz, "yaw_rate": yaw_rate}
+    }
+    temp_file = COMMAND_QUEUE_FILE + ".tmp"
+    with open(temp_file, "w") as f:
+        json.dump(queue_data, f)
+    os.replace(temp_file, COMMAND_QUEUE_FILE)
+    return {"status": "dispatched", "action": "TELEOP", "teleop": [vx, vy, vz, yaw_rate]}
 
 @app.get("/api/telemetry")
 def get_telemetry():

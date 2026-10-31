@@ -92,6 +92,9 @@ case "$MODE" in
             /drone/odometry@nav_msgs/msg/Odometry[gz.msgs.Odometry \
             /drone/camera/forward/image_raw@sensor_msgs/msg/Image[gz.msgs.Image \
             /drone/camera/downward/image_raw@sensor_msgs/msg/Image[gz.msgs.Image \
+            /drone/camera/rear/image_raw@sensor_msgs/msg/Image[gz.msgs.Image \
+            /drone/camera/left/image_raw@sensor_msgs/msg/Image[gz.msgs.Image \
+            /drone/camera/right/image_raw@sensor_msgs/msg/Image[gz.msgs.Image \
             /world/camera/overview/image_raw@sensor_msgs/msg/Image[gz.msgs.Image \
             /drone/imu@sensor_msgs/msg/Imu[gz.msgs.IMU \
             /drone/gps@sensor_msgs/msg/NavSatFix[gz.msgs.NavSat \
@@ -134,6 +137,9 @@ case "$MODE" in
             /drone/odometry@nav_msgs/msg/Odometry[gz.msgs.Odometry \
             /drone/camera/forward/image_raw@sensor_msgs/msg/Image[gz.msgs.Image \
             /drone/camera/downward/image_raw@sensor_msgs/msg/Image[gz.msgs.Image \
+            /drone/camera/rear/image_raw@sensor_msgs/msg/Image[gz.msgs.Image \
+            /drone/camera/left/image_raw@sensor_msgs/msg/Image[gz.msgs.Image \
+            /drone/camera/right/image_raw@sensor_msgs/msg/Image[gz.msgs.Image \
             /world/camera/overview/image_raw@sensor_msgs/msg/Image[gz.msgs.Image \
             /drone/imu@sensor_msgs/msg/Imu[gz.msgs.IMU \
             /drone/gps@sensor_msgs/msg/NavSatFix[gz.msgs.NavSat \

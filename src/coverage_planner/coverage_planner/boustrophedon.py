@@ -111,3 +111,64 @@ class BoustrophedonPlanner:
                 })
                 plan.extend(zone_wps)
         return plan
+
+    def generate_perimeter_plan(self,
+                                altitude: float = 15.0,
+                                speed: float = 4.5,
+                                standoff_y: float = 28.0) -> List[Dict[str, Any]]:
+        """Generates sovereign border perimeter defense patrol sweep along Country A boundary."""
+        plan = [
+            {"id": "perimeter_climb", "zone_id": "transit", "x": 0.0, "y": 0.0, "z": altitude, "speed": 4.0},
+            {"id": "perimeter_west_entry", "zone_id": "zone_bravo", "x": -80.0, "y": 20.0, "z": altitude, "speed": speed},
+            {"id": "perimeter_border_w1", "zone_id": "zone_bravo", "x": -80.0, "y": standoff_y, "z": altitude, "speed": speed},
+            {"id": "perimeter_border_w2", "zone_id": "zone_alpha", "x": -40.0, "y": standoff_y, "z": altitude, "speed": speed},
+            {"id": "perimeter_border_gate", "zone_id": "zone_alpha", "x": 0.0, "y": standoff_y, "z": altitude, "speed": speed},
+            {"id": "perimeter_border_e1", "zone_id": "zone_charlie", "x": 40.0, "y": standoff_y, "z": altitude, "speed": speed},
+            {"id": "perimeter_border_e2", "zone_id": "zone_delta", "x": 80.0, "y": standoff_y, "z": altitude, "speed": speed},
+            {"id": "perimeter_outpost_ridge", "zone_id": "zone_delta", "x": 75.0, "y": 0.0, "z": altitude, "speed": speed},
+            {"id": "perimeter_south_east", "zone_id": "zone_delta", "x": 50.0, "y": -30.0, "z": altitude, "speed": speed},
+            {"id": "perimeter_south_base", "zone_id": "zone_alpha", "x": 0.0, "y": -45.0, "z": altitude, "speed": speed},
+            {"id": "perimeter_south_west", "zone_id": "zone_bravo", "x": -50.0, "y": -30.0, "z": altitude, "speed": speed},
+            {"id": "perimeter_border_return", "zone_id": "zone_bravo", "x": -80.0, "y": standoff_y, "z": altitude, "speed": speed},
+            {"id": "perimeter_border_sweep_e", "zone_id": "zone_delta", "x": 80.0, "y": standoff_y, "z": altitude, "speed": speed}
+        ]
+        return plan
+
+    def generate_spiral_plan(self,
+                             center_x: float = 0.0,
+                             center_y: float = 0.0,
+                             max_radius: float = 65.0,
+                             altitude: float = 16.0,
+                             speed: float = 4.2) -> List[Dict[str, Any]]:
+        """Generates expanding rectangular spiral search pattern constrained within Country A."""
+        wps = [
+            {"id": "spiral_climb", "zone_id": "transit", "x": center_x, "y": center_y, "z": altitude, "speed": 4.0}
+        ]
+        step = 16.0 # Camera footprint width
+        x, y = center_x, center_y
+        dist = step
+        idx = 1
+        sovereign_max_y = 28.0
+
+        while dist <= max_radius:
+            # 1. Right (+X)
+            x += dist
+            wps.append({"id": f"spiral_wp_{idx}", "zone_id": "spiral", "x": round(x, 2), "y": round(min(sovereign_max_y, y), 2), "z": altitude, "speed": speed})
+            idx += 1
+            # 2. Up (+Y, capped by sovereign border)
+            y += dist
+            wps.append({"id": f"spiral_wp_{idx}", "zone_id": "spiral", "x": round(x, 2), "y": round(min(sovereign_max_y, y), 2), "z": altitude, "speed": speed})
+            idx += 1
+            dist += step
+
+            # 3. Left (-X)
+            x -= dist
+            wps.append({"id": f"spiral_wp_{idx}", "zone_id": "spiral", "x": round(x, 2), "y": round(min(sovereign_max_y, y), 2), "z": altitude, "speed": speed})
+            idx += 1
+            # 4. Down (-Y)
+            y -= dist
+            wps.append({"id": f"spiral_wp_{idx}", "zone_id": "spiral", "x": round(x, 2), "y": round(min(sovereign_max_y, y), 2), "z": altitude, "speed": speed})
+            idx += 1
+            dist += step
+
+        return wps

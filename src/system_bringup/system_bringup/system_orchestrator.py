@@ -94,8 +94,15 @@ class SystemOrchestrator(Node):
         self.BORDER_LINE_Y = 32.0 # Ground Demarcation Line
         self.SOVEREIGN_MAX_Y = 28.5 # Hard limit: Drone stays strictly in Country A (never cross border line)
 
+        # Operational Control Mode & Pattern Configuration
+        self.control_mode = "AUTONOMOUS" # "AUTONOMOUS" or "MANUAL_REMOTE"
+        self.surveillance_pattern = "boustrophedon" # "boustrophedon", "perimeter", or "spiral"
+        self.teleop_cmd = [0.0, 0.0, 0.0, 0.0] # [body_vx, body_vy, vz, yaw_rate]
+        self.last_teleop_time = 0.0
+
         # ROS 2 Subscriptions with SensorData QoS
         self.cmd_sub = self.create_subscription(String, '/drone/mission_command', self.on_mission_cmd, 10)
+        self.teleop_sub = self.create_subscription(Twist, '/drone/teleop_cmd', self.on_teleop_cmd, 10)
         self.odom_sub = self.create_subscription(Odometry, '/drone/odometry', self.on_gazebo_odom, qos_profile_sensor_data)
         self.imu_sub = self.create_subscription(Imu, '/drone/imu', self.on_gazebo_imu, qos_profile_sensor_data)
         self.gps_sub = self.create_subscription(NavSatFix, '/drone/gps', self.on_gazebo_gps, qos_profile_sensor_data)
@@ -307,6 +314,11 @@ class SystemOrchestrator(Node):
     def on_mission_cmd(self, msg: String):
         self.execute_command(msg.data.strip())
 
+    def on_teleop_cmd(self, msg: Twist):
+        self.control_mode = "MANUAL_REMOTE"
+        self.teleop_cmd = [msg.linear.x, msg.linear.y, msg.linear.z, msg.angular.z]
+        self.last_teleop_time = time.time()
+
     def on_gazebo_odom(self, msg: Odometry):
         p = msg.pose.pose.position
         v = msg.twist.twist.linear
@@ -404,6 +416,7 @@ class SystemOrchestrator(Node):
         elif action == "RESET":
             self.flight_state = "IDLE"
             self.mission_state = "IDLE"
+            self.control_mode = "AUTONOMOUS"
             self.drone_pos = [0.0, 0.0, 0.49]
             self.drone_vel = [0.0, 0.0, 0.0]
             self.roll = self.pitch = self.yaw = 0.0
@@ -412,6 +425,34 @@ class SystemOrchestrator(Node):
             self.covered_cells.clear()
             self.logged_tracks.clear()
             self.battery = BatteryModel(capacity_wh=555.0, safety_reserve_pct=20.0)
+        elif action == "SET_MODE":
+            mode = params.get("mode", "AUTONOMOUS").upper()
+            if mode in ["AUTONOMOUS", "MANUAL_REMOTE"]:
+                self.control_mode = mode
+                if mode == "MANUAL_REMOTE" and self.drone_pos[2] < 1.0:
+                    # If on ground, trigger takeoff to 15m first for remote flight
+                    self.flight_state = "TAKEOFF"
+                    self.mission_state = "TAKEOFF"
+                self.get_logger().info(f"Control mode changed to: {self.control_mode}")
+        elif action == "SET_PATTERN":
+            pat = params.get("pattern", "boustrophedon").lower()
+            self.surveillance_pattern = pat
+            if pat == "perimeter":
+                self.waypoints = self.planner.generate_perimeter_plan()
+            elif pat == "spiral":
+                self.waypoints = self.planner.generate_spiral_plan(self.drone_pos[0], self.drone_pos[1])
+            else:
+                self.waypoints = self.planner.generate_full_mission_plan(self.ordered_zones)
+            self.wp_index = 0
+            self.get_logger().info(f"Surveillance pattern set to {pat} ({len(self.waypoints)} waypoints)")
+        elif action == "TELEOP":
+            self.control_mode = "MANUAL_REMOTE"
+            vx = float(params.get("vx", 0.0))
+            vy = float(params.get("vy", 0.0))
+            vz = float(params.get("vz", 0.0))
+            yaw_rate = float(params.get("yaw_rate", 0.0))
+            self.teleop_cmd = [vx, vy, vz, yaw_rate]
+            self.last_teleop_time = time.time()
 
     def tick(self):
         now = time.time()
@@ -437,7 +478,35 @@ class SystemOrchestrator(Node):
 
         use_fallback_integration = not getattr(self, 'has_gazebo_odom', False) or (time.time() - getattr(self, 'last_gazebo_time', 0.0) > 1.5)
 
-        if self.flight_state == "PRECHECK":
+        if self.control_mode == "MANUAL_REMOTE" and self.drone_pos[2] > 0.8:
+            # Active Manual Remote Teleoperation Mode
+            if (now - self.last_teleop_time) < 0.8:
+                b_vx, b_vy, t_vz, t_yaw_rate = self.teleop_cmd
+            else:
+                b_vx = b_vy = t_vz = t_yaw_rate = 0.0
+
+            cmd_vx = b_vx * math.cos(self.yaw) - b_vy * math.sin(self.yaw)
+            cmd_vy = b_vx * math.sin(self.yaw) + b_vy * math.cos(self.yaw)
+            cmd_vz = t_vz
+            cmd_yaw_rate = t_yaw_rate
+
+            # Safety Interlock: Strictly enforce sovereign boundary (Country A max Y=28.5m)
+            if self.drone_pos[1] >= self.SOVEREIGN_MAX_Y and cmd_vy > 0:
+                cmd_vy = 0.0
+            if self.drone_pos[2] <= 1.0 and cmd_vz < 0:
+                cmd_vz = 0.0
+
+            self.roll = math.radians(-max(-8.0, min(8.0, b_vy * 1.8)))
+            self.pitch = math.radians(max(-8.0, min(8.0, b_vx * 1.8)))
+
+            if use_fallback_integration:
+                self.drone_pos[0] += cmd_vx * dt
+                self.drone_pos[1] = min(self.SOVEREIGN_MAX_Y, self.drone_pos[1] + cmd_vy * dt)
+                self.drone_pos[2] = max(1.0, self.drone_pos[2] + cmd_vz * dt)
+                self.yaw += cmd_yaw_rate * dt
+            self.total_dist_m += math.sqrt(cmd_vx**2 + cmd_vy**2) * dt
+
+        elif self.flight_state == "PRECHECK":
             if self.battery.percentage > 25.0:
                 self.flight_state = "TAKEOFF"
                 self.mission_state = "TAKEOFF"
@@ -765,6 +834,9 @@ class SystemOrchestrator(Node):
             "flight_state": self.flight_state,
             "mission_state": self.mission_state,
             "state": self.flight_state,
+            "control_mode": self.control_mode,
+            "surveillance_pattern": self.surveillance_pattern,
+            "is_manual_teleop": (self.control_mode == "MANUAL_REMOTE"),
             "position": {
                 "x": round(self.drone_pos[0], 2),
                 "y": round(self.drone_pos[1], 2),
