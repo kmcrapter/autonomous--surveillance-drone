@@ -20,7 +20,11 @@ bridge_proc = subprocess.Popen([
     "ros2", "run", "ros_gz_bridge", "parameter_bridge",
     "/drone/cmd_vel@geometry_msgs/msg/Twist]gz.msgs.Twist",
     "/drone/odometry@nav_msgs/msg/Odometry[gz.msgs.Odometry",
-    "/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock"
+    "/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock",
+    "/model/surveillance_drone/joint/rotor_0_joint/cmd_vel@std_msgs/msg/Float64]gz.msgs.Double",
+    "/model/surveillance_drone/joint/rotor_1_joint/cmd_vel@std_msgs/msg/Float64]gz.msgs.Double",
+    "/model/surveillance_drone/joint/rotor_2_joint/cmd_vel@std_msgs/msg/Float64]gz.msgs.Double",
+    "/model/surveillance_drone/joint/rotor_3_joint/cmd_vel@std_msgs/msg/Float64]gz.msgs.Double"
 ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 time.sleep(2)

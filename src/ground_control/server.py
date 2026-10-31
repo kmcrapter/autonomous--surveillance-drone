@@ -259,9 +259,14 @@ def get_telemetry_snapshot() -> Dict[str, Any]:
 
     # Compute detailed subsystem avionics diagnostics (Hexacopter M1..M6, ESCs, 6S Cells, RF Link)
     state = data.get("flight_state", "IDLE")
-    is_flying = state in ["SURVEYING", "TAKEOFF", "RETURNING", "PAUSED", "AVOIDING"]
-    base_rpm = 5240 if is_flying else (1200 if state == "PRECHECK" else 0)
-    jitter = lambda: int(np.random.randint(-18, 19)) if is_flying else 0
+    prop_info = data.get("propellers", {})
+    if "active" in prop_info:
+        prop_active = bool(prop_info["active"])
+    else:
+        prop_active = state in ["SURVEYING", "TAKEOFF", "RETURNING", "AVOIDING", "RESUMING"]
+    is_flying = prop_active
+    base_rpm = 5240 if prop_active else 0
+    jitter = lambda: int(np.random.randint(-18, 19)) if prop_active else 0
 
     v_pack = data.get("battery", {}).get("voltage", 25.2)
     v_cell = round(v_pack / 6.0, 3)

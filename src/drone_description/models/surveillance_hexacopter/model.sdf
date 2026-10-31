@@ -418,10 +418,10 @@
       </axis>
     </joint>
 
-    <!-- Quadcopter Rotor Velocity Controllers (Autonomous High-Speed Continuous Propeller Rotation) -->
+    <!-- Quadcopter Rotor Velocity Controllers (Dynamic Rotor Rotation Controlled via /model/surveillance_drone/joint/rotor_X_joint/cmd_vel) -->
     <plugin filename="gz-sim-joint-controller-system" name="gz::sim::systems::JointController">
       <joint_name>rotor_0_joint</joint_name>
-      <initial_velocity>85.0</initial_velocity>
+      <initial_velocity>0.0</initial_velocity>
       <p_gain>5.0</p_gain>
       <i_gain>0.1</i_gain>
       <d_gain>0.01</d_gain>
@@ -430,7 +430,7 @@
     </plugin>
     <plugin filename="gz-sim-joint-controller-system" name="gz::sim::systems::JointController">
       <joint_name>rotor_1_joint</joint_name>
-      <initial_velocity>-85.0</initial_velocity>
+      <initial_velocity>0.0</initial_velocity>
       <p_gain>5.0</p_gain>
       <i_gain>0.1</i_gain>
       <d_gain>0.01</d_gain>
@@ -439,7 +439,7 @@
     </plugin>
     <plugin filename="gz-sim-joint-controller-system" name="gz::sim::systems::JointController">
       <joint_name>rotor_2_joint</joint_name>
-      <initial_velocity>85.0</initial_velocity>
+      <initial_velocity>0.0</initial_velocity>
       <p_gain>5.0</p_gain>
       <i_gain>0.1</i_gain>
       <d_gain>0.01</d_gain>
@@ -448,7 +448,7 @@
     </plugin>
     <plugin filename="gz-sim-joint-controller-system" name="gz::sim::systems::JointController">
       <joint_name>rotor_3_joint</joint_name>
-      <initial_velocity>-85.0</initial_velocity>
+      <initial_velocity>0.0</initial_velocity>
       <p_gain>5.0</p_gain>
       <i_gain>0.1</i_gain>
       <d_gain>0.01</d_gain>

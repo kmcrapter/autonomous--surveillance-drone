@@ -460,7 +460,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const av = telem.avionics;
       const rpmBox = document.getElementById('motorRpmChips');
       if (rpmBox && Array.isArray(av.motor_rpms)) {
-        rpmBox.innerHTML = av.motor_rpms.map((rpm, i) => `<span class="rpm-chip font-mono">M${i+1}: ${rpm}</span>`).join('');
+        rpmBox.innerHTML = av.motor_rpms.map((rpm, i) => {
+          const isSpinning = rpm > 0;
+          const statusClass = isSpinning ? 'rpm-chip active font-mono' : 'rpm-chip stopped font-mono';
+          return `<span class="${statusClass}" title="${isSpinning ? 'Propeller Spinning' : 'Propeller Stopped'}">M${i+1}: ${rpm}</span>`;
+        }).join('');
       }
       const lipoBox = document.getElementById('lipoCellChips');
       if (lipoBox && Array.isArray(av.lipo_cells_v)) {

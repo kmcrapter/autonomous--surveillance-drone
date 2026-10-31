@@ -1603,6 +1603,20 @@ body {
   font-size: 8.5px;
   padding: 1px 4px;
   border-radius: 2px;
+  transition: all 0.2s ease;
+}
+
+.rpm-chip.stopped {
+  background: rgba(140, 150, 165, 0.1);
+  border-color: rgba(140, 150, 165, 0.3);
+  color: #8c96a5;
+}
+
+.rpm-chip.active {
+  background: rgba(0, 229, 153, 0.15);
+  border-color: rgba(0, 229, 153, 0.45);
+  color: #00e599;
+  box-shadow: 0 0 6px rgba(0, 229, 153, 0.2);
 }
 
 .cell-chip {

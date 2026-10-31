@@ -118,6 +118,12 @@ class SystemOrchestrator(Node):
         self.telemetry_pub = self.create_publisher(String, '/drone/mission_telemetry', 10)
         self.obs_pub = self.create_publisher(String, '/events/observations', 10)
 
+        # Dynamic Rotor Joint Velocity Controllers for Gazebo Harmonic (Stopped until Mission Start)
+        self.rotor_pubs = [
+            self.create_publisher(Float64, f'/model/surveillance_drone/joint/rotor_{i}_joint/cmd_vel', 10)
+            for i in range(4)
+        ]
+
         # Simulation Entities for Computer Vision Observations:
         # Includes 16 Distinct People (Men and Women), 7 Vehicles, 8 Wildlife Animals, and 5 Hazards/Objects.
         self.sim_entities = [
@@ -827,6 +833,11 @@ class SystemOrchestrator(Node):
         prog_pct = round((self.wp_index / max(1, total_wps)) * 100.0, 1) if total_wps > 0 else 0.0
         cur_zone = ZoneManager.which_zone(self.drone_pos[0], self.drone_pos[1])
 
+        # Determine Propeller Activity: Propellers only start when mission is initiated or actively flying
+        is_propellers_active = (self.flight_state in ["PRECHECK", "TAKEOFF", "SURVEYING", "RETURNING", "LANDING", "RESUMING", "AVOIDING"]) or \
+                               (self.control_mode == "MANUAL_REMOTE" and (self.drone_pos[2] > 0.6 or abs(cmd_vx) > 0.05 or abs(cmd_vy) > 0.05 or abs(cmd_vz) > 0.05))
+        target_rotor_vels = [85.0, -85.0, 85.0, -85.0] if is_propellers_active else [0.0, 0.0, 0.0, 0.0]
+
         # Construct Comprehensive Telemetry Dictionary
         telemetry_dict = {
             "timestamp": now,
@@ -837,6 +848,11 @@ class SystemOrchestrator(Node):
             "control_mode": self.control_mode,
             "surveillance_pattern": self.surveillance_pattern,
             "is_manual_teleop": (self.control_mode == "MANUAL_REMOTE"),
+            "propellers": {
+                "active": is_propellers_active,
+                "target_rad_s": target_rotor_vels,
+                "status": "ACTIVE_SPINNING" if is_propellers_active else "STOPPED"
+            },
             "position": {
                 "x": round(self.drone_pos[0], 2),
                 "y": round(self.drone_pos[1], 2),
@@ -985,6 +1001,12 @@ class SystemOrchestrator(Node):
         t_msg.linear.z = float(cmd_vz)
         t_msg.angular.z = float(cmd_yaw_rate)
         self.cmd_vel_pub.publish(t_msg)
+
+        # 4b. Command Dynamic Propeller Rotors in Gazebo Harmonic
+        for pub, r_vel in zip(self.rotor_pubs, target_rotor_vels):
+            rv_msg = Float64()
+            rv_msg.data = float(r_vel)
+            pub.publish(rv_msg)
 
         # 5. NavSatFix GPS
         gps_msg = NavSatFix()

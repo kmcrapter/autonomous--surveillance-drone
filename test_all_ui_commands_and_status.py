@@ -39,8 +39,17 @@ def run_tests():
         f"{WS_ROOT}/venv/bin/python3", "-m", "uvicorn", "ground_control.server:app", "--host", "127.0.0.1", "--port", str(port)
     ], env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-    time.sleep(2)
+    time.sleep(1)
     base_url = f"http://127.0.0.1:{port}"
+
+    # Wait for server to bind
+    for _ in range(10):
+        try:
+            with urllib.request.urlopen(f"{base_url}/health", timeout=1.0) as resp:
+                if resp.status == 200:
+                    break
+        except Exception:
+            time.sleep(0.5)
 
     try:
         # A. UI Static HTML & Core Interface

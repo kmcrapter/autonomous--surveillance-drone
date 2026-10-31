@@ -98,7 +98,11 @@ case "$MODE" in
             /world/camera/overview/image_raw@sensor_msgs/msg/Image[gz.msgs.Image \
             /drone/imu@sensor_msgs/msg/Imu[gz.msgs.IMU \
             /drone/gps@sensor_msgs/msg/NavSatFix[gz.msgs.NavSat \
-            /clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock &
+            /clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock \
+            /model/surveillance_drone/joint/rotor_0_joint/cmd_vel@std_msgs/msg/Float64]gz.msgs.Double \
+            /model/surveillance_drone/joint/rotor_1_joint/cmd_vel@std_msgs/msg/Float64]gz.msgs.Double \
+            /model/surveillance_drone/joint/rotor_2_joint/cmd_vel@std_msgs/msg/Float64]gz.msgs.Double \
+            /model/surveillance_drone/joint/rotor_3_joint/cmd_vel@std_msgs/msg/Float64]gz.msgs.Double &
         BRIDGE_PID=$!
         sleep 2
 
@@ -143,7 +147,11 @@ case "$MODE" in
             /world/camera/overview/image_raw@sensor_msgs/msg/Image[gz.msgs.Image \
             /drone/imu@sensor_msgs/msg/Imu[gz.msgs.IMU \
             /drone/gps@sensor_msgs/msg/NavSatFix[gz.msgs.NavSat \
-            /clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock &
+            /clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock \
+            /model/surveillance_drone/joint/rotor_0_joint/cmd_vel@std_msgs/msg/Float64]gz.msgs.Double \
+            /model/surveillance_drone/joint/rotor_1_joint/cmd_vel@std_msgs/msg/Float64]gz.msgs.Double \
+            /model/surveillance_drone/joint/rotor_2_joint/cmd_vel@std_msgs/msg/Float64]gz.msgs.Double \
+            /model/surveillance_drone/joint/rotor_3_joint/cmd_vel@std_msgs/msg/Float64]gz.msgs.Double &
         BRIDGE_PID=$!
         sleep 2
 
