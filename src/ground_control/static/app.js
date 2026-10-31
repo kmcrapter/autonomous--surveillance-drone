@@ -81,6 +81,66 @@ document.addEventListener('DOMContentLoaded', () => {
     dashArray: '4, 8'
   }).addTo(map).bindTooltip("FOREIGN TERRITORY (COUNTRY B - SECTOR BRAVO / CHARLIE)", { sticky: true, className: "map-tooltip" });
 
+  // Tactical Concentric Distance Range Rings (Offline Vector Grid Overlay)
+  [25, 50, 75, 100].forEach(r_m => {
+    L.circle(cartesianToGps(0, 0), {
+      radius: r_m,
+      color: 'rgba(0, 240, 255, 0.22)',
+      weight: 1,
+      dashArray: '3, 6',
+      fill: false,
+      interactive: false
+    }).addTo(map);
+  });
+
+  // Tactical Map Actions Toolbar
+  let isFollowDrone = true;
+  const btnMapFollow = document.getElementById('btnMapFollow');
+  const btnMapHome = document.getElementById('btnMapHome');
+  const btnMapFit = document.getElementById('btnMapFit');
+  const btnMapClearTrail = document.getElementById('btnMapClearTrail');
+
+  if (btnMapFollow) {
+    btnMapFollow.addEventListener('click', () => {
+      isFollowDrone = !isFollowDrone;
+      btnMapFollow.classList.toggle('active', isFollowDrone);
+      if (isFollowDrone && droneMarker) {
+        map.panTo(droneMarker.getLatLng(), { animate: true });
+      }
+    });
+  }
+
+  if (btnMapHome) {
+    btnMapHome.addEventListener('click', () => {
+      isFollowDrone = false;
+      btnMapFollow?.classList.remove('active');
+      map.flyTo(cartesianToGps(0, 0), 17);
+    });
+  }
+
+  if (btnMapFit) {
+    btnMapFit.addEventListener('click', () => {
+      isFollowDrone = false;
+      btnMapFollow?.classList.remove('active');
+      const b1 = cartesianToGps(-90, -60);
+      const b2 = cartesianToGps(90, 85);
+      map.fitBounds([b1, b2], { padding: [20, 20] });
+    });
+  }
+
+  if (btnMapClearTrail) {
+    btnMapClearTrail.addEventListener('click', () => {
+      flownTrail.setLatLngs([]);
+      trailPoints = [];
+    });
+  }
+
+  // Ensure Leaflet recalculates dimensions immediately to eliminate blank/grey map glitches
+  setTimeout(() => map.invalidateSize(), 150);
+  setTimeout(() => map.invalidateSize(), 600);
+  setTimeout(() => map.invalidateSize(), 1800);
+  window.addEventListener('resize', () => map.invalidateSize());
+
   // Real-Time Area Coverage Layer & Grid Cache
   const coverageLayerGroup = L.layerGroup().addTo(map);
   const renderedGridCells = new Set();
@@ -120,22 +180,58 @@ document.addEventListener('DOMContentLoaded', () => {
   const eventPinsGroup = L.layerGroup().addTo(map);
   const plottedEventIds = new Set();
 
-  // Drone Position & Heading Marker
+  // Drone Position & Heading Marker with Pulsating Radar Beam
   const droneIcon = L.divIcon({
     className: 'drone-svg-marker',
     html: `
       <div id="droneMapIcon" style="transform: rotate(0deg); transition: transform 0.1s linear;">
-        <svg width="24" height="24" viewBox="0 0 24 24">
-          <!-- Cone beam -->
-          <polygon points="12,12 2,0 22,0" fill="rgba(0, 240, 255, 0.25)" />
-          <!-- Aircraft Triangle -->
-          <polygon points="12,2 4,20 12,16 20,20" fill="#ffd000" stroke="#000" stroke-width="1.5" />
+        <svg width="28" height="28" viewBox="0 0 28 28">
+          <!-- Animated Radar Sweep Cone -->
+          <polygon points="14,14 0,0 28,0" fill="rgba(0, 240, 255, 0.35)" />
+          <line x1="14" y1="14" x2="14" y2="0" stroke="#00f0ff" stroke-width="1.5" stroke-dasharray="2, 2" />
+          <!-- Aircraft Hexacopter Triangle -->
+          <polygon points="14,4 5,24 14,19 23,24" fill="#ffd000" stroke="#000" stroke-width="1.5" />
+          <circle cx="14" cy="14" r="3" fill="#00f0ff" />
         </svg>
       </div>`,
-    iconSize: [24, 24],
-    iconAnchor: [12, 12]
+    iconSize: [28, 28],
+    iconAnchor: [14, 14]
   });
   const droneMarker = L.marker(homeGps, { icon: droneIcon }).addTo(map);
+
+  // Tactical Web Audio Alert Tone Synthesizer
+  let isAudioEnabled = true;
+  let audioCtx = null;
+  function playTacticalTone(freq = 880, duration = 0.08, type = 'sine') {
+    if (!isAudioEnabled) return;
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    } catch (e) {}
+  }
+
+  const btnAudioToggle = document.getElementById('btnAudioToggle');
+  const audioText = document.getElementById('audioText');
+  const audioIcon = document.getElementById('audioIcon');
+  if (btnAudioToggle) {
+    btnAudioToggle.addEventListener('click', () => {
+      isAudioEnabled = !isAudioEnabled;
+      btnAudioToggle.classList.toggle('muted', !isAudioEnabled);
+      if (audioText) audioText.textContent = isAudioEnabled ? 'AUDIO ON' : 'AUDIO MUTED';
+      if (audioIcon) audioIcon.textContent = isAudioEnabled ? '🔊' : '🔇';
+      if (isAudioEnabled) playTacticalTone(880, 0.08);
+    });
+  }
 
   // 2. WebSocket Telemetry Streaming
   let ws = null;
@@ -340,9 +436,81 @@ document.addEventListener('DOMContentLoaded', () => {
     const currentGps = cartesianToGps(pos.x, pos.y);
     droneMarker.setLatLng(currentGps);
 
+    if (isFollowDrone && map) {
+      map.panTo(currentGps, { animate: false });
+    }
+
     const mapIconEl = document.getElementById('droneMapIcon');
     if (mapIconEl) {
       mapIconEl.style.transform = `rotate(${heading}deg)`;
+    }
+
+    // Real-Time Thermal Radiometry HUD Updates
+    const rad = telem.thermal_radiometry || {};
+    const centerT = rad.t_center || 36.8;
+    const maxT = rad.t_max || 42.0;
+    latestThermalCenterTemp = centerT;
+    const centerEl = document.getElementById('thermalCenterTemp');
+    const maxEl = document.getElementById('thermalMaxTemp');
+    if (centerEl) centerEl.textContent = `CTR: ${centerT.toFixed(1)}°C`;
+    if (maxEl) maxEl.textContent = `MAX: ${maxT.toFixed(1)}°C`;
+
+    // Real-Time Subsystem Avionics Diagnostics
+    if (telem.avionics) {
+      const av = telem.avionics;
+      const rpmBox = document.getElementById('motorRpmChips');
+      if (rpmBox && Array.isArray(av.motor_rpms)) {
+        rpmBox.innerHTML = av.motor_rpms.map((rpm, i) => `<span class="rpm-chip font-mono">M${i+1}: ${rpm}</span>`).join('');
+      }
+      const lipoBox = document.getElementById('lipoCellChips');
+      if (lipoBox && Array.isArray(av.lipo_cells_v)) {
+        lipoBox.innerHTML = av.lipo_cells_v.map((v, i) => `<span class="cell-chip font-mono">C${i+1}: ${v.toFixed(2)}V</span>`).join('');
+      }
+      const rfEl = document.getElementById('rfLinkStatus');
+      if (rfEl && av.rf_link) {
+        rfEl.textContent = `RSSI ${av.rf_link.rssi_dbm} dBm | SNR ${av.rf_link.snr_db} dB | ${av.rf_link.quality_pct}%`;
+      }
+      const escEl = document.getElementById('escTempStatus');
+      if (escEl && Array.isArray(av.esc_temps_c)) {
+        const avgEsc = (av.esc_temps_c.reduce((a, b) => a + b, 0) / av.esc_temps_c.length).toFixed(1);
+        escEl.textContent = `${avgEsc}°C (NOMINAL)`;
+      }
+    }
+
+    // Real-Time Target & Contact Matrix Table
+    const matrixContainer = document.getElementById('targetMatrixContainer');
+    const matrixCountBadge = document.getElementById('targetMatrixCountBadge');
+    const matrixHeaderBadge = document.getElementById('targetMatrixHeaderBadge');
+    if (telem.target_matrix && Array.isArray(telem.target_matrix)) {
+      if (matrixCountBadge) matrixCountBadge.textContent = telem.target_matrix.length;
+      if (matrixHeaderBadge) matrixHeaderBadge.textContent = `${telem.target_matrix.length} CONTACTS`;
+      if (matrixContainer) {
+        if (telem.target_matrix.length === 0) {
+          matrixContainer.innerHTML = '<div class="empty-state">No contacts in optical or thermal range. Move drone along surveillance pattern to detect targets.</div>';
+        } else {
+          matrixContainer.innerHTML = telem.target_matrix.map(c => {
+            const isForeign = c.territory.includes('FOREIGN');
+            const catColor = c.category === 'person' ? '#00f0ff' : c.category === 'vehicle' ? '#ffd000' : c.category === 'wildlife' ? '#00e599' : '#ff3b5c';
+            return `
+              <div class="contact-card ${isForeign ? 'is-foreign' : ''}">
+                <div class="contact-header-row">
+                  <div>
+                    <span class="contact-tid">${c.track_id}</span>
+                    <span class="contact-label-tag" style="margin-left: 6px;">${c.label}</span>
+                  </div>
+                  <span class="badge" style="background:${catColor}20;color:${catColor};border:1px solid ${catColor}50;font-size:8px;">${c.category.toUpperCase()}</span>
+                </div>
+                <div class="contact-grid-info">
+                  <div><span class="cg-label">RANGE</span><span class="cg-val">${c.range_m.toFixed(1)}m</span></div>
+                  <div><span class="cg-label">BEARING</span><span class="cg-val">${Math.round(c.bearing_deg)}°</span></div>
+                  <div><span class="cg-label">TEMP</span><span class="cg-val text-amber">${c.temp_c.toFixed(1)}°C</span></div>
+                  <div><span class="cg-label">TERRITORY</span><span class="cg-val" style="color:${isForeign ? '#ff3b5c' : '#00e599'}">${isForeign ? 'FOREIGN' : 'HOME'}</span></div>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+      }
     }
 
     // Real-Time Area Coverage Grid & Progress HUD
@@ -452,6 +620,7 @@ document.addEventListener('DOMContentLoaded', () => {
         b.classList.add('hidden');
       }
     });
+    setTimeout(() => map && map.invalidateSize(), 150);
   }
 
   layoutButtons.forEach(btn => {
@@ -485,6 +654,71 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   });
+
+  // 3a. FLIR LWIR Radiometric Thermal Controls & Palettes
+  let latestThermalCenterTemp = 36.8;
+  const paletteButtons = document.querySelectorAll('.btn-palette');
+  paletteButtons.forEach(btn => {
+    btn.addEventListener('click', async () => {
+      paletteButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const pal = btn.dataset.palette;
+      try {
+        await fetch('/api/thermal/palette', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ palette: pal })
+        });
+        playTacticalTone(880, 0.05);
+      } catch (e) {
+        console.error("Thermal palette error", e);
+      }
+    });
+  });
+
+  let isIsothermActive = true;
+  const btnToggleIsotherm = document.getElementById('btnToggleIsotherm');
+  if (btnToggleIsotherm) {
+    btnToggleIsotherm.addEventListener('click', async () => {
+      isIsothermActive = !isIsothermActive;
+      btnToggleIsotherm.classList.toggle('active', isIsothermActive);
+      try {
+        await fetch('/api/thermal/isotherm', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enabled: isIsothermActive, threshold_c: 35.0 })
+        });
+        playTacticalTone(660, 0.05);
+      } catch (e) {
+        console.error("Isotherm error", e);
+      }
+    });
+  }
+
+  // Interactive Spot Radiometer Hover Probe on Thermal Video
+  const thermalImgWrap = document.getElementById('thermalImgWrap');
+  const streamThermalImg = document.getElementById('streamThermalImg');
+  const thermalProbeBadge = document.getElementById('thermalProbeBadge');
+
+  if (streamThermalImg && thermalProbeBadge) {
+    streamThermalImg.addEventListener('mousemove', (e) => {
+      const rect = streamThermalImg.getBoundingClientRect();
+      const px = (e.clientX - rect.left) / rect.width;
+      const py = (e.clientY - rect.top) / rect.height;
+      if (px >= 0 && px <= 1 && py >= 0 && py <= 1) {
+        thermalProbeBadge.classList.remove('hidden');
+        thermalProbeBadge.style.left = `${e.clientX - rect.left + 14}px`;
+        thermalProbeBadge.style.top = `${e.clientY - rect.top - 12}px`;
+        const baseT = latestThermalCenterTemp || 36.8;
+        const distCenter = Math.hypot(px - 0.5, py - 0.5);
+        const spotT = Math.max(12.0, baseT - (distCenter * 26.0) + (Math.sin(px * 12 + py * 12) * 1.5));
+        thermalProbeBadge.textContent = `${spotT.toFixed(1)}°C / ${(spotT * 9/5 + 32).toFixed(1)}°F`;
+      }
+    });
+    streamThermalImg.addEventListener('mouseleave', () => {
+      thermalProbeBadge.classList.add('hidden');
+    });
+  }
 
   // 3b. Flight Mode, Pattern Selection & Remote Teleop Controls
   const btnModeAuto = document.getElementById('btnModeAuto');
@@ -814,26 +1048,30 @@ document.addEventListener('DOMContentLoaded', () => {
   // 6. Personnel Identification & Verification Panel Logic
   // =========================================================================
   const tabSurveillanceBtn = document.getElementById('tabSurveillanceBtn');
+  const tabTargetMatrixBtn = document.getElementById('tabTargetMatrixBtn');
   const tabPersonnelBtn = document.getElementById('tabPersonnelBtn');
   const surveillanceTabPane = document.getElementById('surveillanceTabPane');
+  const targetMatrixTabPane = document.getElementById('targetMatrixTabPane');
   const personnelTabPane = document.getElementById('personnelTabPane');
 
-  if (tabSurveillanceBtn && tabPersonnelBtn) {
-    tabSurveillanceBtn.addEventListener('click', () => {
-      tabSurveillanceBtn.classList.add('active');
-      tabPersonnelBtn.classList.remove('active');
-      if (surveillanceTabPane) surveillanceTabPane.classList.add('active');
-      if (personnelTabPane) personnelTabPane.classList.remove('active');
-    });
+  const allTabs = [
+    { btn: tabSurveillanceBtn, pane: surveillanceTabPane, onShow: null },
+    { btn: tabTargetMatrixBtn, pane: targetMatrixTabPane, onShow: null },
+    { btn: tabPersonnelBtn, pane: personnelTabPane, onShow: () => loadPersonnelData() }
+  ];
 
-    tabPersonnelBtn.addEventListener('click', () => {
-      tabPersonnelBtn.classList.add('active');
-      tabSurveillanceBtn.classList.remove('active');
-      if (personnelTabPane) personnelTabPane.classList.add('active');
-      if (surveillanceTabPane) surveillanceTabPane.classList.remove('active');
-      loadPersonnelData();
+  allTabs.forEach(({ btn, pane, onShow }) => {
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+      allTabs.forEach(t => {
+        t.btn?.classList.remove('active');
+        t.pane?.classList.remove('active');
+      });
+      btn.classList.add('active');
+      pane?.classList.add('active');
+      if (onShow) onShow();
     });
-  }
+  });
 
   // Personnel Scenario Controller
   const personnelScenarioSelect = document.getElementById('personnelScenarioSelect');

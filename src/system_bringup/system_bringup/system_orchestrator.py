@@ -907,7 +907,7 @@ class SystemOrchestrator(Node):
                 "covered_cells_count": covered_cells_count,
                 "total_cells_count": total_cells_count,
                 "border_line_y": self.BORDER_LINE_Y,
-                "cells_sample": list(self.covered_cells)[-60:] if self.covered_cells else []
+                "cells_sample": list(self.covered_cells) if self.covered_cells else []
             },
             "border_line": {
                 "y": self.BORDER_LINE_Y,

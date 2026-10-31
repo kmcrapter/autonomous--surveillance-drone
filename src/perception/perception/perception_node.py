@@ -32,6 +32,7 @@ LIVE_OVERVIEW_PATH = "/home/hari/.gemini/antigravity/scratch/surveillance_drone_
 LIVE_THERMAL_PATH = "/home/hari/.gemini/antigravity/scratch/surveillance_drone_ws/data/db/live_thermal.jpg"
 LIVE_NVG_PATH = "/home/hari/.gemini/antigravity/scratch/surveillance_drone_ws/data/db/live_nvg.jpg"
 CAMERA_STATUS_PATH = "/home/hari/.gemini/antigravity/scratch/surveillance_drone_ws/data/db/camera_status.json"
+THERMAL_CMD_PATH = "/home/hari/.gemini/antigravity/scratch/surveillance_drone_ws/data/db/thermal_cmd.json"
 
 class PerceptionNode(Node):
     def __init__(self):
@@ -372,6 +373,20 @@ class PerceptionNode(Node):
             except Exception:
                 pass
 
+        # Check thermal control commands from GCS UI
+        if os.path.exists(THERMAL_CMD_PATH):
+            try:
+                with open(THERMAL_CMD_PATH, "r") as f:
+                    t_cmd = json.load(f)
+                if "palette" in t_cmd:
+                    self.thermal.set_palette(t_cmd["palette"])
+                if "isotherm" in t_cmd:
+                    self.thermal.set_isotherm(t_cmd["isotherm"].get("enabled", True),
+                                              float(t_cmd["isotherm"].get("threshold_c", 35.0)))
+                os.remove(THERMAL_CMD_PATH)
+            except Exception:
+                pass
+
         # 1. Forward Optical RGB Camera (CAM-1)
         if self.last_forward_frame is not None:
             raw_forward = self.last_forward_frame
@@ -469,7 +484,7 @@ class PerceptionNode(Node):
         cv2.imwrite(LIVE_NVG_PATH, nvg_frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
         cv2.imwrite(LIVE_OVERVIEW_PATH, overview_frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
 
-        # Write Camera Status Metadata
+        # Write Camera Status Metadata with Radiometric Intelligence
         status_meta = {
             "fps": max(15.0, self.current_fps),
             "resolution": f"{raw_forward.shape[1]}x{raw_forward.shape[0]}",
@@ -483,6 +498,8 @@ class PerceptionNode(Node):
             "thermal_active": True,
             "night_vision_active": True,
             "overview_active": self.last_overview_frame is not None,
+            "radiometry": self.thermal.last_radiometry,
+            "thermal_palette": self.thermal.current_palette,
             "timestamp": now
         }
         with open(CAMERA_STATUS_PATH + ".tmp", "w") as f:

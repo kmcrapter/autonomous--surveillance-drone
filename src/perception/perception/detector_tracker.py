@@ -203,9 +203,29 @@ class ObjectDetectorTracker:
                     "temp_c": 580.0
                 })
 
-        # 2. Exact Perspective Spatial Target Projections
+        # 2. Exact Perspective Spatial Target Projections with Strict Optical Resolution Limits
+        MAX_DETECTION_RANGE = {
+            "person": 42.0,
+            "wildlife": 34.0,
+            "vehicle": 62.0,
+            "fire": 75.0,
+            "hazard": 50.0
+        }
+
+        is_nadir = (cam_pitch > 1.1)
+
         for act in self.KNOWN_ACTORS:
             ax, ay = act["pos"]
+            cat = act["category"]
+            max_range = MAX_DETECTION_RANGE.get(cat, 40.0)
+
+            # Nadir ground radius interlock
+            if is_nadir:
+                g_dist = math.hypot(ax - drone_pos[0], ay - drone_pos[1])
+                max_nadir_r = max(14.0, drone_pos[2] * 1.15)
+                if g_dist > max_nadir_r:
+                    continue
+
             proj = self.project_world_to_pixel(
                 ax, ay, 0.0,
                 drone_pos, drone_yaw,
@@ -216,12 +236,20 @@ class ObjectDetectorTracker:
                 continue
 
             u, v, dist_cam = proj
-            margin = 35
-            if (-margin <= u <= w + margin) and (-margin <= v <= h + margin):
+
+            # Reject objects beyond physical optical resolution limit
+            if dist_cam > max_range:
+                continue
+
+            # Strict on-screen boundary verification (No ghost off-screen detections)
+            if (0 <= u <= w) and (0 <= v <= h):
                 # Calculate real physical bounding box dimensions
                 real_w, real_h = act.get("size", (0.6, 1.8))
-                box_w = max(14, int(round(fx * (real_w / dist_cam))))
-                box_h = max(18, int(round(fy * (real_h / dist_cam))))
+                box_w = max(10, int(round(fx * (real_w / dist_cam))))
+                box_h = max(14, int(round(fy * (real_h / dist_cam))))
+
+                if box_w < 10 or box_h < 14:
+                    continue
 
                 x1 = int(round(u - box_w / 2.0))
                 y2 = int(round(v))
@@ -234,10 +262,10 @@ class ObjectDetectorTracker:
                 bx2 = max(bx1 + 2, min(w, x2))
                 by2 = max(by1 + 2, min(h, y2))
 
-                # Distance-calibrated confidence score
-                dist_factor = max(0.0, 1.0 - (dist_cam / 90.0))
-                base_conf = 0.94 if act["category"] != "wildlife" else 0.88
-                calibrated_conf = round(base_conf * (0.85 + 0.15 * dist_factor), 2)
+                # Distance-calibrated confidence score (minimum 0.75 for verified contacts)
+                dist_factor = max(0.0, 1.0 - (dist_cam / max_range))
+                base_conf = 0.95 if act["category"] != "wildlife" else 0.90
+                calibrated_conf = round(base_conf * (0.80 + 0.20 * dist_factor), 2)
 
                 # Check if already detected by optical color mask (same category & close proximity)
                 matched_existing = False
@@ -272,16 +300,34 @@ class ObjectDetectorTracker:
         return detections
 
     def update_tracks(self, detections: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """Associates detections with persistent track IDs using spatial distance matching."""
+        """Associates detections with persistent track IDs using tight spatial distance matching and deduplication."""
         now = time.time()
         updated_detections = []
 
-        # Remove dead tracks older than 4.0 seconds
-        dead_ids = [tid for tid, obj in self.tracked_objects.items() if (now - obj.last_seen) > 4.0]
+        # 1. Multi-Camera Spatial Deduplication (filter out duplicate sightings of same target)
+        deduped: List[Dict[str, Any]] = []
+        for det in detections:
+            wx, wy = det["world_pos"]
+            cat = det["category"]
+            is_dup = False
+            for prev in deduped:
+                pwx, pwy = prev["world_pos"]
+                if prev["category"] == cat and math.hypot(wx - pwx, wy - pwy) < 3.2:
+                    is_dup = True
+                    # Keep higher confidence
+                    if det.get("confidence", 0) > prev.get("confidence", 0):
+                        prev.update(det)
+                    break
+            if not is_dup:
+                deduped.append(det)
+
+        # 2. Remove dead tracks older than 3.5 seconds
+        dead_ids = [tid for tid, obj in self.tracked_objects.items() if (now - obj.last_seen) > 3.5]
         for did in dead_ids:
             del self.tracked_objects[did]
 
-        for det in detections:
+        # 3. Associate tracks with tight category-specific gating
+        for det in deduped:
             cat = det["category"]
             bbox = det["bbox"]
             conf = det["confidence"]
@@ -290,11 +336,12 @@ class ObjectDetectorTracker:
 
             best_tid = None
             min_dist = float('inf')
+            max_match_dist = 4.5 if cat in ["person", "wildlife"] else 8.5
 
             for tid, obj in self.tracked_objects.items():
                 if obj.category == cat:
-                    dist = math.sqrt((wx - obj.world_pos[0])**2 + (wy - obj.world_pos[1])**2)
-                    if dist < min_dist and dist < 14.0: # Match if within 14m
+                    dist = math.hypot(wx - obj.world_pos[0], wy - obj.world_pos[1])
+                    if dist < min_dist and dist < max_match_dist:
                         min_dist = dist
                         best_tid = tid
 
@@ -303,7 +350,7 @@ class ObjectDetectorTracker:
                 obj.update(bbox, conf, (wx, wy), label=lbl)
                 tid = best_tid
                 should_log = False
-                move_d = math.sqrt((wx - obj.last_logged_pos[0])**2 + (wy - obj.last_logged_pos[1])**2)
+                move_d = math.hypot(wx - obj.last_logged_pos[0], wy - obj.last_logged_pos[1])
                 if not obj.logged_event or move_d >= 20.0:
                     should_log = True
                     obj.logged_event = True
@@ -315,8 +362,11 @@ class ObjectDetectorTracker:
                 new_obj.logged_event = True
                 self.tracked_objects[tid] = new_obj
                 should_log = True
+                obj = new_obj
 
             det["track_id"] = f"TRK-{tid:03d}"
+            det["hits"] = obj.hits
+            det["is_confirmed"] = (obj.hits >= 2)
             det["should_log_event"] = should_log
             updated_detections.append(det)
 

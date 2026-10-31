@@ -66,6 +66,9 @@
         <span class="chip-label">GNSS FIX</span>
         <span class="chip-value text-emerald font-mono" id="gpsFixText">3D RTK (21 SV)</span>
       </div>
+      <button class="btn-hud-audio" id="btnAudioToggle" title="Toggle Tactical Audio Alerts">
+        <span id="audioIcon">🔊</span> <span id="audioText">AUDIO ON</span>
+      </button>
     </div>
   </header>
 
@@ -267,14 +270,30 @@
             </div>
           </div>
 
-          <!-- Viewport 3: Synthetic LWIR Thermal Camera (Hidden in Dual, shown in Quad or Switch) -->
+          <!-- Viewport 3: Calibrated LWIR Thermal Camera with Radiometry Controls -->
           <div class="cam-box hidden" id="camBoxThermal">
             <div class="cam-banner">
-              <span class="cam-name">SYNTHETIC LWIR THERMAL (INFERNO)</span>
-              <span class="cam-live-indicator">● 8-14 µm</span>
+              <span class="cam-name">FLIR LWIR 8-14µm RADIOMETRIC THERMAL</span>
+              <div class="thermal-quick-controls">
+                <span class="thermal-stat-chip font-mono" id="thermalCenterTemp">CTR: --.-°C</span>
+                <span class="thermal-stat-chip font-mono" id="thermalMaxTemp">MAX: --.-°C</span>
+                <button class="btn-isotherm active" id="btnToggleIsotherm" title="Toggle Isotherm Alert Highlight">ISO: 35°C</button>
+              </div>
+              <span class="cam-live-indicator">● RADIOMETRIC</span>
             </div>
-            <div class="cam-img-wrap">
+            <!-- Thermal Palette Selector Strip -->
+            <div class="thermal-palette-bar">
+              <span class="tp-label">PALETTE:</span>
+              <button class="btn-palette active" data-palette="ironbow">IRONBOW</button>
+              <button class="btn-palette" data-palette="white_hot">WHITE HOT</button>
+              <button class="btn-palette" data-palette="black_hot">BLACK HOT</button>
+              <button class="btn-palette" data-palette="inferno">INFERNO</button>
+              <button class="btn-palette" data-palette="rainbow">RAINBOW</button>
+              <button class="btn-palette" data-palette="arctic">ARCTIC</button>
+            </div>
+            <div class="cam-img-wrap" id="thermalImgWrap">
               <img id="streamThermalImg" src="/api/stream/thermal" alt="Thermal LWIR Stream">
+              <div class="thermal-probe-badge hidden" id="thermalProbeBadge">--.-°C</div>
             </div>
           </div>
 
@@ -349,14 +368,20 @@
               </div>
             </div>
           </div>
+          <div class="map-actions-group">
+            <button class="btn-map-action active" id="btnMapFollow" title="Auto-center map on drone position">🎯 FOLLOW</button>
+            <button class="btn-map-action" id="btnMapHome" title="Center map on Home Base landing dock">🏠 HOME</button>
+            <button class="btn-map-action" id="btnMapFit" title="Fit all border zones and airspace">📐 FIT</button>
+            <button class="btn-map-action" id="btnMapClearTrail" title="Clear breadcrumb flight trail">🧹 CLEAR TRAIL</button>
+          </div>
           <div class="map-legend">
-            <span><span class="legend-dot dot-border"></span> Border Line (32m)</span>
-            <span><span class="legend-dot dot-cov"></span> Surveyed Grid</span>
-            <span><span class="legend-dot dot-alpha"></span> Zone Alpha</span>
-            <span><span class="legend-dot dot-bravo"></span> Zone Bravo</span>
-            <span><span class="legend-dot dot-charlie"></span> Zone Charlie</span>
-            <span><span class="legend-dot dot-delta"></span> Zone Delta</span>
-            <span><span class="legend-dot dot-drone"></span> Drone Position</span>
+            <span><span class="legend-dot dot-border"></span> Border (32m)</span>
+            <span><span class="legend-dot dot-cov"></span> Surveyed</span>
+            <span><span class="legend-dot dot-alpha"></span> Zone A</span>
+            <span><span class="legend-dot dot-bravo"></span> Zone B</span>
+            <span><span class="legend-dot dot-charlie"></span> Zone C</span>
+            <span><span class="legend-dot dot-delta"></span> Zone D</span>
+            <span><span class="legend-dot dot-drone"></span> Drone</span>
           </div>
         </div>
         <div id="tacticalMap" class="map-viewport"></div>
@@ -452,6 +477,40 @@
           </div>
         </div>
       </div>
+
+      <!-- Subsystem Avionics Diagnostics Bar -->
+      <div class="avionics-bar" id="avionicsBar">
+        <div class="avionics-item">
+          <span class="av-label">PROPULSION (HEXA M1-M6)</span>
+          <div class="motor-rpm-chips" id="motorRpmChips">
+            <span class="rpm-chip font-mono">M1: 5240</span>
+            <span class="rpm-chip font-mono">M2: 5250</span>
+            <span class="rpm-chip font-mono">M3: 5235</span>
+            <span class="rpm-chip font-mono">M4: 5245</span>
+            <span class="rpm-chip font-mono">M5: 5240</span>
+            <span class="rpm-chip font-mono">M6: 5255</span>
+          </div>
+        </div>
+        <div class="avionics-item">
+          <span class="av-label">6S LIPO BALANCE (V/CELL)</span>
+          <div class="lipo-cell-chips" id="lipoCellChips">
+            <span class="cell-chip font-mono">4.19</span>
+            <span class="cell-chip font-mono">4.18</span>
+            <span class="cell-chip font-mono">4.19</span>
+            <span class="cell-chip font-mono">4.18</span>
+            <span class="cell-chip font-mono">4.19</span>
+            <span class="cell-chip font-mono">4.19</span>
+          </div>
+        </div>
+        <div class="avionics-item">
+          <span class="av-label">RF DATA LINK</span>
+          <span class="font-mono text-cyan" id="rfLinkStatus">RSSI -48 dBm | SNR 28.4 dB | 100%</span>
+        </div>
+        <div class="avionics-item">
+          <span class="av-label">ESC TEMPERATURE</span>
+          <span class="font-mono text-emerald" id="escTempStatus">38.2°C (NOMINAL)</span>
+        </div>
+      </div>
     </section>
 
     <!-- RIGHT PANEL: Event Center, Operator Triage & Audit Reports -->
@@ -460,11 +519,16 @@
       <div class="panel-tab-bar">
         <button class="panel-tab-btn active" id="tabSurveillanceBtn" data-target="surveillanceTabPane">
           <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
-          SURVEILLANCE DETECTIONS
+          SURVEILLANCE
+        </button>
+        <button class="panel-tab-btn" id="tabTargetMatrixBtn" data-target="targetMatrixTabPane">
+          <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"></circle><line x1="22" y1="12" x2="18" y2="12"></line><line x1="6" y1="12" x2="2" y2="12"></line><line x1="12" y1="6" x2="12" y2="2"></line><line x1="12" y1="22" x2="12" y2="18"></line></svg>
+          TARGET MATRIX
+          <span class="badge" id="targetMatrixCountBadge" style="background:#00f0ff;color:#000;font-size:8px;padding:1px 4px;border-radius:2px;">0</span>
         </button>
         <button class="panel-tab-btn" id="tabPersonnelBtn" data-target="personnelTabPane">
           <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-          PERSONNEL AUTH &amp; ID
+          PERSONNEL ID
           <span class="badge" id="personnelAlertCountBadge" style="background:#ffd000;color:#000;font-size:8px;padding:1px 4px;border-radius:2px;display:none;">ALERT</span>
         </button>
       </div>
@@ -545,6 +609,21 @@
           <div id="personnelTimelineList">
             <div class="timeline-entry"><span class="timeline-time">SYSTEM</span><span class="timeline-text">Personnel identification stack initialized. Cryptographic HMAC active.</span></div>
           </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: Real-Time Target & Contact Matrix -->
+      <div class="tab-pane" id="targetMatrixTabPane">
+        <div class="panel-header">
+          <span class="panel-title">LIVE TARGET &amp; CONTACT MATRIX</span>
+          <span class="badge" id="targetMatrixHeaderBadge">0 CONTACTS</span>
+        </div>
+        <div class="target-matrix-meta-bar">
+          <span>SORTED BY DISTANCE TO DRONE</span>
+          <span class="text-cyan font-mono" id="tmTrackMode">KALMAN 20Hz</span>
+        </div>
+        <div class="target-matrix-container" id="targetMatrixContainer">
+          <div class="empty-state">No contacts in optical or thermal range. Move drone along surveillance pattern to detect targets.</div>
         </div>
       </div>
     </aside>

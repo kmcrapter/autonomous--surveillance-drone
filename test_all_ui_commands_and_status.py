@@ -167,8 +167,28 @@ def run_tests():
             t_res = json.loads(resp.read().decode('utf-8'))
             assert_test(t_res.get("status") in ["ok", "dispatched"], "Remote teleoperation velocity command accepted")
 
-        # K. Cryptographic PDF and CSV Audit Reports
-        print(f"\n{BLUE}[11/11] Cryptographic Mission Audit PDF & CSV Report Downloads{RESET}")
+        # K. Thermal Radiometry Palettes, Isotherms & Avionics Endpoints
+        print(f"\n{BLUE}[11/12] Thermal Radiometry Palettes, Isotherm Alarms & Avionics{RESET}")
+        for pal in ["white_hot", "black_hot", "ironbow", "inferno", "rainbow", "arctic"]:
+            pal_payload = json.dumps({"palette": pal}).encode('utf-8')
+            req = urllib.request.Request(f"{base_url}/api/thermal/palette", data=pal_payload, headers={"Content-Type": "application/json"})
+            with urllib.request.urlopen(req) as resp:
+                p_res = json.loads(resp.read().decode('utf-8'))
+                assert_test(p_res.get("status") == "ok", f"Thermal palette switch to '{pal}' successful")
+
+        iso_payload = json.dumps({"enabled": True, "threshold_c": 36.5}).encode('utf-8')
+        req = urllib.request.Request(f"{base_url}/api/thermal/isotherm", data=iso_payload, headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(req) as resp:
+            i_res = json.loads(resp.read().decode('utf-8'))
+            assert_test(i_res.get("status") == "ok", "Thermal isotherm threshold configuration successful")
+
+        req = urllib.request.Request(f"{base_url}/api/thermal/radiometry")
+        with urllib.request.urlopen(req) as resp:
+            r_res = json.loads(resp.read().decode('utf-8'))
+            assert_test("t_min" in r_res and "t_max" in r_res, f"Thermal radiometry readouts active (T_max: {r_res.get('t_max')}C)")
+
+        # L. Cryptographic PDF and CSV Audit Reports
+        print(f"\n{BLUE}[12/12] Cryptographic Mission Audit PDF & CSV Report Downloads{RESET}")
         req = urllib.request.Request(f"{base_url}/api/reports/pdf")
         with urllib.request.urlopen(req) as resp:
             pdf_data = resp.read()
