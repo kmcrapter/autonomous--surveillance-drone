@@ -7,7 +7,7 @@ __pycache__/
 *.pyo
 *.tmp
 *.log
-data/db/*.db-journal
-data/db/camera_status.json
+data/db/*
+!data/db/.gitkeep
 data/snapshots/*
 data/reports/*
