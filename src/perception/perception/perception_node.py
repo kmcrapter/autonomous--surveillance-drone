@@ -44,6 +44,7 @@ class PerceptionNode(Node):
 
         self.drone_pos = (0.0, 0.0, 0.49)
         self.drone_yaw = 0.0
+        self.last_odom_time = 0.0
         self.last_forward_frame = None
         self.last_downward_frame = None
         self.last_overview_frame = None
@@ -74,6 +75,7 @@ class PerceptionNode(Node):
         o = msg.pose.pose.orientation
         self.drone_pos = (p.x, p.y, p.z)
         self.drone_yaw = quaternion_to_yaw(o.x, o.y, o.z, qw=o.w)
+        self.last_odom_time = time.time()
 
     def image_msg_to_cv2(self, msg: Image) -> np.ndarray:
         h, w = msg.height, msg.width
@@ -197,25 +199,49 @@ class PerceptionNode(Node):
 
         # Render People, Wildlife, Vehicles & Hazards with exact perspective scaling
         scene_actors = [
-            # Zone Alpha
+            # Zone Alpha (Base HQ, Gate, Logistics, Comms, Hangar)
             (6.0, 20.0, "man", (0, 140, 255), (0.65, 1.80)),
             (-10.0, -25.0, "woman", (200, 130, 40), (0.60, 1.72)),
             (-15.0, 28.0, "woman", (35, 120, 45), (0.60, 1.74)),
-            # Zone Delta
+            (0.0, -35.0, "man", (40, 110, 220), (0.68, 1.82)),
+            (-20.0, -18.0, "man", (180, 100, 40), (0.65, 1.78)),
+            (15.0, -20.0, "woman", (160, 70, 190), (0.60, 1.71)),
+            (0.0, 27.5, "man", (50, 150, 240), (0.65, 1.80)),
+            (0.0, 35.0, "vehicle", (30, 50, 120), (2.20, 1.85)),
+            (-25.0, -35.0, "vehicle", (45, 65, 50), (2.80, 2.90)),
+            (12.0, -32.0, "vehicle", (60, 60, 70), (2.20, 1.85)),
+
+            # Zone Delta (Eastern Outpost Ridge, Bluff, Watchtower, Bridge)
             (65.0, -15.0, "man", (45, 100, 50), (0.65, 1.82)),
+            (0.0, 58.0, "man", (40, 120, 70), (0.65, 1.81)),
+            (70.0, -25.0, "man", (50, 90, 60), (0.65, 1.80)),
+            (44.0, 15.0, "woman", (140, 110, 50), (0.60, 1.74)),
             (72.0, 5.0, "animal", (35, 80, 135), (1.40, 1.30)),
-            # Zone Bravo
+            (68.0, 12.0, "animal", (180, 190, 195), (1.30, 1.10)),
+            (60.0, -10.0, "vehicle", (50, 80, 100), (1.80, 1.50)),
+            (66.0, -18.0, "cargo", (120, 120, 130), (1.00, 8.00)),
+
+            # Zone Bravo (Western Deep Pine Forest, Clearings)
             (-65.0, 50.0, "man", (30, 80, 140), (0.65, 1.80)),
+            (-50.0, 48.0, "man", (60, 100, 50), (0.65, 1.79)),
+            (-60.0, 38.0, "woman", (80, 130, 160), (0.60, 1.70)),
             (-55.0, 42.0, "animal", (35, 80, 140), (1.60, 1.45)),
             (-45.0, 68.0, "animal", (40, 90, 150), (1.35, 1.25)),
+            (-52.0, 44.0, "animal", (45, 95, 160), (0.90, 0.85)),
             (-65.0, 65.0, "fire", (20, 140, 255), (6.0, 5.0)),
-            # Zone Charlie
+            (-48.0, 55.0, "fire", (20, 180, 255), (1.2, 1.0)),
+
+            # Zone Charlie (River Corridor, Roadway, Northern Border Ridge)
             (15.0, 38.0, "man", (50, 50, 60), (0.65, 1.80)),
             (58.0, 74.0, "woman", (40, 20, 180), (0.60, 1.73)),
             (42.0, 56.0, "woman", (220, 150, 20), (0.60, 1.70)),
             (-8.0, 66.0, "man", (35, 95, 45), (0.68, 1.84)),
             (-20.0, 62.0, "animal", (25, 60, 110), (2.10, 1.70)),
-            (0.0, 35.0, "vehicle", (30, 50, 120), (2.20, 1.85))
+            (-24.0, 66.0, "animal", (30, 70, 120), (1.80, 1.55)),
+            (25.0, 70.0, "animal", (70, 75, 80), (1.20, 0.85)),
+            (22.0, 36.0, "vehicle", (30, 120, 140), (1.40, 1.20)),
+            (-15.0, 45.0, "vehicle", (40, 40, 80), (2.30, 1.90)),
+            (12.0, 36.0, "cargo", (60, 70, 90), (2.50, 2.20))
         ]
 
         for ax, ay, atype, acolor, (rw, rh) in scene_actors:
@@ -234,16 +260,32 @@ class PerceptionNode(Node):
                         head_r = max(2, bh // 7)
                         cv2.circle(frame, (int(au), y1 + head_r), head_r, (160, 180, 220), -1)
                         cv2.rectangle(frame, (x1, y1 + head_r * 2), (x2, y2), acolor, -1)
+                        # Leg separation
+                        cv2.line(frame, (int(au), y1 + head_r * 2 + bh // 2), (int(au), y2), (20, 20, 25), 1)
                     elif atype == "animal":
+                        # Body rectangle and head/neck
                         cv2.rectangle(frame, (x1, y1 + bh // 3), (x2, y2), acolor, -1)
                         cv2.circle(frame, (x2, y1 + bh // 3), max(3, bh // 5), acolor, -1)
+                        # Quadruped legs
+                        cv2.line(frame, (x1 + 2, y2 - 4), (x1 + 2, y2), (20, 20, 20), 2)
+                        cv2.line(frame, (x2 - 2, y2 - 4), (x2 - 2, y2), (20, 20, 20), 2)
                     elif atype == "vehicle":
+                        # Chassis & cabin
                         cv2.rectangle(frame, (x1, y1 + bh // 3), (x2, y2), acolor, -1)
                         cv2.rectangle(frame, (x1 + bw // 4, y1), (x2 - bw // 4, y1 + bh // 3), (50, 70, 150), -1)
                         cv2.line(frame, (x1 + bw // 3, y1 - 2), (x2 - bw // 3, y1 - 2), (255, 100, 0), 2)
+                        # Wheels
+                        wheel_r = max(2, bw // 8)
+                        cv2.circle(frame, (x1 + bw // 5, y2), wheel_r, (20, 20, 20), -1)
+                        cv2.circle(frame, (x2 - bw // 5, y2), wheel_r, (20, 20, 20), -1)
                     elif atype == "fire":
+                        # Realistic dual-core incandescent flame
                         cv2.circle(frame, (int(au), int(av - bh // 2)), bw // 2, (0, 120, 255), -1)
-                        cv2.circle(frame, (int(au), int(av - bh // 2)), bw // 3, (0, 220, 255), -1)
+                        cv2.circle(frame, (int(au), int(av - bh // 2)), max(2, bw // 3), (0, 220, 255), -1)
+                    elif atype == "cargo":
+                        # Solid container / structure
+                        cv2.rectangle(frame, (x1, y1), (x2, y2), acolor, -1)
+                        cv2.rectangle(frame, (x1, y1), (x2, y2), (20, 30, 40), 1)
 
         return frame
 
@@ -254,6 +296,25 @@ class PerceptionNode(Node):
             self.current_fps = round(self.frame_count / dt, 1)
             self.frame_count = 0
             self.last_frame_time = now
+
+        # High-frequency telemetry synchronization fallback if Gazebo odom topic is buffering
+        if (now - self.last_odom_time) > 0.20:
+            try:
+                telem_file = "/home/hari/.gemini/antigravity/scratch/surveillance_drone_ws/data/db/telemetry_state.json"
+                if os.path.exists(telem_file):
+                    with open(telem_file, "r") as f:
+                        tdata = json.load(f)
+                    pos = tdata.get("position", {})
+                    if "x" in pos and "y" in pos and "z" in pos:
+                        self.drone_pos = (float(pos["x"]), float(pos["y"]), float(pos["z"]))
+                    yaw_val = tdata.get("yaw_deg")
+                    if yaw_val is not None:
+                        # Convert navigational heading (0=North) to Cartesian yaw (0=East, pi/2=North)
+                        self.drone_yaw = math.radians((90.0 - float(yaw_val)) % 360.0)
+                    elif "orientation" in tdata and "yaw_deg" in tdata["orientation"]:
+                        self.drone_yaw = math.radians((90.0 - float(tdata["orientation"]["yaw_deg"])) % 360.0)
+            except Exception:
+                pass
 
         # Use actual Gazebo forward frame if available; otherwise use dynamic perspective
         if self.last_forward_frame is not None:

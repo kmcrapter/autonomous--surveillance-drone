@@ -112,82 +112,191 @@ class SystemOrchestrator(Node):
         self.obs_pub = self.create_publisher(String, '/events/observations', 10)
 
         # Simulation Entities for Computer Vision Observations:
-        # Includes 7 Distinct People (Men and Women), Wildlife (Animals), Vehicle, and Hazard.
+        # Includes 16 Distinct People (Men and Women), 7 Vehicles, 8 Wildlife Animals, and 5 Hazards/Objects.
         self.sim_entities = [
-            # 1. Man - Home Sovereign Patrol Guard (Zone Alpha - North Gate)
+            # Zone Alpha: Home Sovereign Base HQ, Gate, Logistics, Comms, Hangar
+            # 1. Man - Home Sovereign Patrol Guard (North Gate)
             {"id": "TRK-001", "category": "person", "gender": "man", "territory": "HOME",
              "label": "Man (Home Patrol Guard)", "pos": [6.0, 20.0], "speed": 1.1,
              "route": [[6.0, 20.0], [14.0, 22.0], [20.0, 20.0], [6.0, 20.0]]},
 
-            # 2. Woman - Home Base Logistics Officer (Zone Alpha - South HQ)
+            # 2. Woman - Home Base Logistics Officer (South HQ)
             {"id": "TRK-002", "category": "person", "gender": "woman", "territory": "HOME",
              "label": "Woman (Logistics Officer)", "pos": [-10.0, -25.0], "speed": 0.9,
              "route": [[-10.0, -25.0], [-16.0, -22.0], [-8.0, -28.0], [-10.0, -25.0]]},
 
-            # 3. Woman - Home Sovereign Border Officer (Zone Alpha - Border Checkpoint)
+            # 3. Woman - Home Sovereign Border Officer (Border Checkpoint)
             {"id": "TRK-003", "category": "person", "gender": "woman", "territory": "HOME",
              "label": "Woman (Border Officer)", "pos": [-15.0, 28.0], "speed": 1.0,
              "route": [[-15.0, 28.0], [-22.0, 27.0], [-10.0, 26.0], [-15.0, 28.0]]},
 
-            # 4. Man - Outpost Ridge Sentry (Zone Delta - Eastern Watchtower)
-            {"id": "TRK-004", "category": "person", "gender": "man", "territory": "HOME",
-             "label": "Man (Outpost Ridge Sentry)", "pos": [65.0, -15.0], "speed": 0.8,
-             "route": [[65.0, -15.0], [70.0, -12.0], [60.0, -18.0], [65.0, -15.0]]},
+            # 4. Man - Base Commander Vance (Ops Command Center)
+            {"id": "TRK-014", "category": "person", "gender": "man", "territory": "HOME",
+             "label": "Man (Base Commander Vance)", "pos": [0.0, -35.0], "speed": 0.6,
+             "route": [[0.0, -35.0], [4.0, -32.0], [-4.0, -33.0], [0.0, -35.0]]},
 
-            # 5. Man - Foreign Border Crosser (Zone Charlie - Border Road Corridor)
-            {"id": "TRK-005", "category": "person", "gender": "man", "territory": "FOREIGN",
-             "label": "Man (Foreign Border Crosser)", "pos": [15.0, 38.0], "speed": 1.2,
-             "route": [[15.0, 38.0], [18.0, 42.0], [12.0, 36.0], [15.0, 38.0]]},
+            # 5. Man - Hangar Mechanic Miller (Drone Flight Hangar)
+            {"id": "TRK-015", "category": "person", "gender": "man", "territory": "HOME",
+             "label": "Man (Hangar Mechanic Miller)", "pos": [-20.0, -18.0], "speed": 0.8,
+             "route": [[-20.0, -18.0], [-24.0, -16.0], [-18.0, -20.0], [-20.0, -18.0]]},
 
-            # 6. Man - Foreign Forest Hiker (Zone Bravo - Western Deep Pine Forest)
-            {"id": "TRK-006", "category": "person", "gender": "man", "territory": "FOREIGN",
-             "label": "Man (Foreign Forest Hiker)", "pos": [-65.0, 50.0], "speed": 1.0,
-             "route": [[-65.0, 50.0], [-60.0, 54.0], [-68.0, 48.0], [-65.0, 50.0]]},
+            # 6. Woman - Comms Specialist (Antenna Array)
+            {"id": "TRK-016", "category": "person", "gender": "woman", "territory": "HOME",
+             "label": "Woman (Comms Specialist)", "pos": [15.0, -20.0], "speed": 0.7,
+             "route": [[15.0, -20.0], [18.0, -18.0], [12.0, -22.0], [15.0, -20.0]]},
 
-            # 7. Woman - Foreign High Ground Observer (Zone Charlie - North Hill Bluff)
-            {"id": "TRK-007", "category": "person", "gender": "woman", "territory": "FOREIGN",
-             "label": "Woman (High Ground Observer)", "pos": [58.0, 74.0], "speed": 0.8,
-             "route": [[58.0, 74.0], [62.0, 72.0], [54.0, 76.0], [58.0, 74.0]]},
+            # 7. Man - Main Gate Guard (Base Perimeter Entry)
+            {"id": "TRK-017", "category": "person", "gender": "man", "territory": "HOME",
+             "label": "Man (Main Gate Guard)", "pos": [0.0, 27.5], "speed": 0.8,
+             "route": [[0.0, 27.5], [3.0, 28.0], [-3.0, 28.0], [0.0, 27.5]]},
 
-            # 8. Woman - Foreign Riverbank Civilian (Zone Charlie - River Trail)
-            {"id": "TRK-008", "category": "person", "gender": "woman", "territory": "FOREIGN",
-             "label": "Woman (Riverbank Civilian)", "pos": [42.0, 56.0], "speed": 0.9,
-             "route": [[42.0, 56.0], [48.0, 58.0], [38.0, 54.0], [42.0, 56.0]]},
-
-            # 9. Man - Foreign Sector Woodsman (Zone Charlie - Northern River Crossing)
-            {"id": "TRK-009", "category": "person", "gender": "man", "territory": "FOREIGN",
-             "label": "Man (Northern Woodsman)", "pos": [-8.0, 66.0], "speed": 0.7,
-             "route": [[-8.0, 66.0], [-2.0, 68.0], [-14.0, 64.0], [-8.0, 66.0]]},
-
-            # 10. Wildlife - Deer Stag (Zone Bravo - Forest Clearing)
-            {"id": "TRK-010", "category": "wildlife", "animal_type": "deer_stag", "territory": "FOREIGN",
-             "label": "Animal (Wildlife Deer Stag)", "pos": [-55.0, 42.0], "speed": 1.3,
-             "route": [[-55.0, 42.0], [-62.0, 45.0], [-50.0, 40.0], [-55.0, 42.0]]},
-
-            # 11. Wildlife - Deer Doe (Zone Bravo - Upper Pine Woods)
-            {"id": "TRK-011", "category": "wildlife", "animal_type": "deer_doe", "territory": "FOREIGN",
-             "label": "Animal (Wildlife Deer Doe)", "pos": [-45.0, 68.0], "speed": 1.2,
-             "route": [[-45.0, 68.0], [-50.0, 65.0], [-40.0, 70.0], [-45.0, 68.0]]},
-
-            # 12. Wildlife - Forest Elk (Zone Charlie - Riverbank Wetlands)
-            {"id": "TRK-012", "category": "wildlife", "animal_type": "elk", "territory": "FOREIGN",
-             "label": "Animal (Riverbank Forest Elk)", "pos": [-20.0, 62.0], "speed": 1.1,
-             "route": [[-20.0, 62.0], [-26.0, 65.0], [-15.0, 60.0], [-20.0, 62.0]]},
-
-            # 13. Wildlife - Mountain Deer (Zone Delta - Eastern Outpost Ridge Bluff)
-            {"id": "TRK-013", "category": "wildlife", "animal_type": "mountain_deer", "territory": "HOME",
-             "label": "Animal (Mountain Deer)", "pos": [72.0, 5.0], "speed": 1.2,
-             "route": [[72.0, 5.0], [76.0, 8.0], [68.0, 2.0], [72.0, 5.0]]},
-
-            # Moving Patrol Vehicle
+            # 8. Moving Patrol SUV (Border Roadway)
             {"id": "TRK-020", "category": "vehicle", "territory": "HOME",
              "label": "Patrol SUV (Border Roadway)", "pos": [0.0, 35.0], "speed": 3.5,
              "route": [[0.0, 18.0], [0.0, 35.0], [0.0, 50.0], [0.0, 18.0]]},
 
-            # Environmental Thermal Hazard (Wildfire)
+            # 9. Military Transport Truck 6x6 (Base Logistics)
+            {"id": "TRK-021", "category": "vehicle", "territory": "HOME",
+             "label": "Military Transport Truck 6x6", "pos": [-25.0, -35.0], "speed": 1.2,
+             "route": [[-25.0, -35.0], [-20.0, -32.0], [-25.0, -35.0]]},
+
+            # 10. HQ Command SUV (Base Headquarters)
+            {"id": "TRK-022", "category": "vehicle", "territory": "HOME",
+             "label": "HQ Command SUV (Parked)", "pos": [12.0, -32.0], "speed": 0.0,
+             "route": [[12.0, -32.0]]},
+
+            # Zone Delta: Eastern Outpost Ridge, Watchtower, Bridge
+            # 11. Man - Outpost Ridge Sentry (Eastern Watchtower)
+            {"id": "TRK-004", "category": "person", "gender": "man", "territory": "HOME",
+             "label": "Man (Outpost Ridge Sentry)", "pos": [65.0, -15.0], "speed": 0.8,
+             "route": [[65.0, -15.0], [70.0, -12.0], [60.0, -18.0], [65.0, -15.0]]},
+
+            # 12. Man - Bridge Sentry Kowalski (River Crossing Guard)
+            {"id": "TRK-029", "category": "person", "gender": "man", "territory": "HOME",
+             "label": "Man (Bridge Sentry Kowalski)", "pos": [0.0, 58.0], "speed": 0.9,
+             "route": [[0.0, 58.0], [4.0, 58.0], [-4.0, 58.0], [0.0, 58.0]]},
+
+            # 13. Man - Eastern Lookout Guard (Ridge Bluff)
+            {"id": "TRK-033", "category": "person", "gender": "man", "territory": "HOME",
+             "label": "Man (Eastern Lookout Guard)", "pos": [70.0, -25.0], "speed": 0.7,
+             "route": [[70.0, -25.0], [74.0, -22.0], [68.0, -28.0], [70.0, -25.0]]},
+
+            # 14. Woman - Perimeter Patrol Officer (Southeast Sector)
+            {"id": "TRK-034", "category": "person", "gender": "woman", "territory": "HOME",
+             "label": "Woman (Perimeter Patrol Officer)", "pos": [44.0, 15.0], "speed": 1.0,
+             "route": [[44.0, 15.0], [50.0, 18.0], [40.0, 12.0], [44.0, 15.0]]},
+
+            # 15. Wildlife - Mountain Deer (Eastern Bluff)
+            {"id": "TRK-013", "category": "wildlife", "animal_type": "mountain_deer", "territory": "HOME",
+             "label": "Animal (Mountain Deer)", "pos": [72.0, 5.0], "speed": 1.2,
+             "route": [[72.0, 5.0], [76.0, 8.0], [68.0, 2.0], [72.0, 5.0]]},
+
+            # 16. Wildlife - Mountain Bighorn Sheep (High Crags)
+            {"id": "TRK-035", "category": "wildlife", "animal_type": "sheep", "territory": "HOME",
+             "label": "Animal (Mountain Bighorn Sheep)", "pos": [68.0, 12.0], "speed": 1.0,
+             "route": [[68.0, 12.0], [72.0, 15.0], [65.0, 9.0], [68.0, 12.0]]},
+
+            # 17. Outpost Utility Rover (Outpost Depot)
+            {"id": "TRK-036", "category": "vehicle", "territory": "HOME",
+             "label": "Outpost Utility Rover", "pos": [60.0, -10.0], "speed": 1.5,
+             "route": [[60.0, -10.0], [66.0, -8.0], [58.0, -14.0], [60.0, -10.0]]},
+
+            # 18. Comms Tower Repeater Mast (Infrastructure)
+            {"id": "TRK-037", "category": "hazard", "territory": "HOME",
+             "label": "Comms Tower Repeater Mast", "pos": [66.0, -18.0], "speed": 0.0,
+             "route": [[66.0, -18.0]]},
+
+            # Zone Bravo: Western Deep Pine Forest, Clearings
+            # 19. Man - Foreign Forest Hiker (Western Pine Trail)
+            {"id": "TRK-006", "category": "person", "gender": "man", "territory": "FOREIGN",
+             "label": "Man (Foreign Forest Hiker)", "pos": [-65.0, 50.0], "speed": 1.0,
+             "route": [[-65.0, 50.0], [-60.0, 54.0], [-68.0, 48.0], [-65.0, 50.0]]},
+
+            # 20. Man - Deep Forest Scout (Northwest Boundary)
+            {"id": "TRK-018", "category": "person", "gender": "man", "territory": "FOREIGN",
+             "label": "Man (Deep Forest Scout)", "pos": [-50.0, 48.0], "speed": 1.1,
+             "route": [[-50.0, 48.0], [-45.0, 52.0], [-55.0, 44.0], [-50.0, 48.0]]},
+
+            # 21. Woman - Forest Forager (Pine Glade)
+            {"id": "TRK-019", "category": "person", "gender": "woman", "territory": "FOREIGN",
+             "label": "Woman (Forest Forager)", "pos": [-60.0, 38.0], "speed": 0.8,
+             "route": [[-60.0, 38.0], [-64.0, 40.0], [-56.0, 36.0], [-60.0, 38.0]]},
+
+            # 22. Wildlife - Deer Stag (Forest Clearing)
+            {"id": "TRK-010", "category": "wildlife", "animal_type": "deer_stag", "territory": "FOREIGN",
+             "label": "Animal (Wildlife Deer Stag)", "pos": [-55.0, 42.0], "speed": 1.3,
+             "route": [[-55.0, 42.0], [-62.0, 45.0], [-50.0, 40.0], [-55.0, 42.0]]},
+
+            # 23. Wildlife - Deer Doe (Upper Pine Woods)
+            {"id": "TRK-011", "category": "wildlife", "animal_type": "deer_doe", "territory": "FOREIGN",
+             "label": "Animal (Wildlife Deer Doe)", "pos": [-45.0, 68.0], "speed": 1.2,
+             "route": [[-45.0, 68.0], [-50.0, 65.0], [-40.0, 70.0], [-45.0, 68.0]]},
+
+            # 24. Wildlife - Deer Fawn (Forest Meadow)
+            {"id": "TRK-025", "category": "wildlife", "animal_type": "fawn", "territory": "FOREIGN",
+             "label": "Animal (Wildlife Deer Fawn)", "pos": [-52.0, 44.0], "speed": 1.1,
+             "route": [[-52.0, 44.0], [-56.0, 46.0], [-48.0, 42.0], [-52.0, 44.0]]},
+
+            # 25. Environmental Thermal Hazard (Wildfire)
             {"id": "TRK-030", "category": "fire", "territory": "FOREIGN",
              "label": "Thermal Hazard (Wildfire)", "pos": [-65.0, 65.0], "speed": 0.0,
-             "route": [[-65.0, 65.0]]}
+             "route": [[-65.0, 65.0]]},
+
+            # 26. Environmental Thermal Hazard (Campfire)
+            {"id": "TRK-031", "category": "fire", "territory": "FOREIGN",
+             "label": "Thermal Hazard (Campfire)", "pos": [-48.0, 55.0], "speed": 0.0,
+             "route": [[-48.0, 55.0]]},
+
+            # Zone Charlie: River Corridor, Roadway, Northern Border Ridge
+            # 27. Man - Foreign Border Crosser (Border Corridor)
+            {"id": "TRK-005", "category": "person", "gender": "man", "territory": "FOREIGN",
+             "label": "Man (Foreign Border Crosser)", "pos": [15.0, 38.0], "speed": 1.2,
+             "route": [[15.0, 38.0], [18.0, 42.0], [12.0, 36.0], [15.0, 38.0]]},
+
+            # 28. Woman - Foreign High Ground Observer (North Hill Bluff)
+            {"id": "TRK-007", "category": "person", "gender": "woman", "territory": "FOREIGN",
+             "label": "Woman (High Ground Observer)", "pos": [58.0, 74.0], "speed": 0.8,
+             "route": [[58.0, 74.0], [62.0, 72.0], [54.0, 76.0], [58.0, 74.0]]},
+
+            # 29. Woman - Foreign Riverbank Civilian (River Trail)
+            {"id": "TRK-008", "category": "person", "gender": "woman", "territory": "FOREIGN",
+             "label": "Woman (Riverbank Civilian)", "pos": [42.0, 56.0], "speed": 0.9,
+             "route": [[42.0, 56.0], [48.0, 58.0], [38.0, 54.0], [42.0, 56.0]]},
+
+            # 30. Man - Foreign Sector Woodsman (Northern River Crossing)
+            {"id": "TRK-009", "category": "person", "gender": "man", "territory": "FOREIGN",
+             "label": "Man (Northern Woodsman)", "pos": [-8.0, 66.0], "speed": 0.7,
+             "route": [[-8.0, 66.0], [-2.0, 68.0], [-14.0, 64.0], [-8.0, 66.0]]},
+
+            # 31. Wildlife - Riverbank Forest Elk (Wetlands)
+            {"id": "TRK-012", "category": "wildlife", "animal_type": "elk", "territory": "FOREIGN",
+             "label": "Animal (Riverbank Forest Elk)", "pos": [-20.0, 62.0], "speed": 1.1,
+             "route": [[-20.0, 62.0], [-26.0, 65.0], [-15.0, 60.0], [-20.0, 62.0]]},
+
+            # 32. Wildlife - Forest Elk Doe (North River)
+            {"id": "TRK-027", "category": "wildlife", "animal_type": "elk_doe", "territory": "FOREIGN",
+             "label": "Animal (Forest Elk Doe)", "pos": [-24.0, 66.0], "speed": 1.0,
+             "route": [[-24.0, 66.0], [-28.0, 70.0], [-18.0, 64.0], [-24.0, 66.0]]},
+
+            # 33. Wildlife - North Ridge Timber Wolf (Highland Ridge)
+            {"id": "TRK-028", "category": "wildlife", "animal_type": "wolf", "territory": "FOREIGN",
+             "label": "Animal (North Ridge Wolf)", "pos": [25.0, 70.0], "speed": 1.4,
+             "route": [[25.0, 70.0], [30.0, 72.0], [20.0, 68.0], [25.0, 70.0]]},
+
+            # 34. Tactical Border ATV Quad (Border Security Patrol)
+            {"id": "TRK-023", "category": "vehicle", "territory": "HOME",
+             "label": "Tactical Border ATV Quad", "pos": [22.0, 36.0], "speed": 2.8,
+             "route": [[22.0, 36.0], [30.0, 38.0], [15.0, 35.0], [22.0, 36.0]]},
+
+            # 35. Foreign 4x4 Off-Roader (Foreign Roadway)
+            {"id": "TRK-024", "category": "vehicle", "territory": "FOREIGN",
+             "label": "Foreign 4x4 Off-Roader", "pos": [-15.0, 45.0], "speed": 3.0,
+             "route": [[-15.0, 45.0], [-10.0, 52.0], [-20.0, 40.0], [-15.0, 45.0]]},
+
+            # 36. Abandoned Cargo Container (Perimeter Anomaly)
+            {"id": "TRK-032", "category": "hazard", "territory": "FOREIGN",
+             "label": "Abandoned Cargo Container", "pos": [12.0, 36.0], "speed": 0.0,
+             "route": [[12.0, 36.0]]}
         ]
         self.logged_tracks = set()
 

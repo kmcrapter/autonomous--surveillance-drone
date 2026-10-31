@@ -789,6 +789,135 @@
       </link>
     </model>
 
+    <!-- Additional Personnel Models -->
+    <model name="person_man_base_commander">
+      <pose>0 -35 0.9 0 0 0</pose>
+      <link name="human_link">
+        <collision name="col"><geometry><cylinder><radius>0.28</radius><length>1.82</length></cylinder></geometry></collision>
+        <visual name="head"><pose>0 0 0.75 0 0 0</pose><geometry><sphere><radius>0.14</radius></sphere></geometry><material><ambient>0.85 0.68 0.55 1</ambient></material></visual>
+        <visual name="commander_cap"><pose>0 0.02 0.84 0 0 0</pose><geometry><cylinder><radius>0.15</radius><length>0.08</length></cylinder></geometry><material><ambient>0.1 0.2 0.15 1</ambient></material></visual>
+        <visual name="torso"><pose>0 0 0.25 0 0 0</pose><geometry><box><size>0.38 0.54 0.76</size></box></geometry><material><ambient>0.15 0.3 0.2 1</ambient><diffuse>0.2 0.4 0.25 1</diffuse></material></visual>
+        <visual name="leg_left"><pose>0 0.16 -0.45 0 0 0</pose><geometry><cylinder><radius>0.1</radius><length>0.7</length></cylinder></geometry><material><ambient>0.12 0.15 0.12 1</ambient></material></visual>
+        <visual name="leg_right"><pose>0 -0.16 -0.45 0 0 0</pose><geometry><cylinder><radius>0.1</radius><length>0.7</length></cylinder></geometry><material><ambient>0.12 0.15 0.12 1</ambient></material></visual>
+      </link>
+    </model>
+
+    <model name="person_man_hangar_mechanic">
+      <pose>-20 -18 0.9 0 0 0</pose>
+      <link name="human_link">
+        <collision name="col"><geometry><cylinder><radius>0.28</radius><length>1.78</length></cylinder></geometry></collision>
+        <visual name="head"><pose>0 0 0.74 0 0 0</pose><geometry><sphere><radius>0.14</radius></sphere></geometry><material><ambient>0.82 0.65 0.52 1</ambient></material></visual>
+        <visual name="overalls"><pose>0 0 0.15 0 0 0</pose><geometry><box><size>0.36 0.5 0.9</size></box></geometry><material><ambient>0.15 0.25 0.5 1</ambient><diffuse>0.2 0.35 0.65 1</diffuse></material></visual>
+        <visual name="legs"><pose>0 0 -0.45 0 0 0</pose><geometry><cylinder><radius>0.15</radius><length>0.7</length></cylinder></geometry><material><ambient>0.12 0.18 0.35 1</ambient></material></visual>
+      </link>
+    </model>
+
+    <model name="person_woman_comms_operator">
+      <pose>15 -20 0.9 0 0 0</pose>
+      <link name="human_link">
+        <collision name="col"><geometry><cylinder><radius>0.26</radius><length>1.71</length></cylinder></geometry></collision>
+        <visual name="head"><pose>0 0 0.72 0 0 0</pose><geometry><sphere><radius>0.13</radius></sphere></geometry><material><ambient>0.88 0.72 0.6 1</ambient></material></visual>
+        <visual name="torso"><pose>0 0 0.25 0 0 0</pose><geometry><box><size>0.32 0.44 0.72</size></box></geometry><material><ambient>0.4 0.2 0.5 1</ambient><diffuse>0.5 0.25 0.6 1</diffuse></material></visual>
+        <visual name="legs"><pose>0 0 -0.45 0 0 0</pose><geometry><cylinder><radius>0.14</radius><length>0.7</length></cylinder></geometry><material><ambient>0.15 0.15 0.2 1</ambient></material></visual>
+      </link>
+    </model>
+
+    <model name="person_man_bridge_sentry">
+      <pose>0 58 1.4 0 0 0</pose>
+      <link name="human_link">
+        <collision name="col"><geometry><cylinder><radius>0.28</radius><length>1.81</length></cylinder></geometry></collision>
+        <visual name="head"><pose>0 0 0.75 0 0 0</pose><geometry><sphere><radius>0.14</radius></sphere></geometry><material><ambient>0.85 0.68 0.55 1</ambient></material></visual>
+        <visual name="torso"><pose>0 0 0.25 0 0 0</pose><geometry><box><size>0.36 0.52 0.75</size></box></geometry><material><ambient>0.2 0.35 0.2 1</ambient></material></visual>
+        <visual name="legs"><pose>0 0 -0.45 0 0 0</pose><geometry><cylinder><radius>0.15</radius><length>0.7</length></cylinder></geometry><material><ambient>0.15 0.2 0.15 1</ambient></material></visual>
+      </link>
+    </model>
+
+    <!-- Additional Vehicles -->
+    <model name="vehicle_transport_truck_6x6">
+      <pose>-25 -35 1.4 0 0 0</pose>
+      <link name="chassis">
+        <collision name="col"><geometry><box><size>6.0 2.5 2.8</size></box></geometry></collision>
+        <visual name="body"><geometry><box><size>6.0 2.5 2.0</size></box></geometry><material><ambient>0.2 0.3 0.2 1</ambient><diffuse>0.25 0.38 0.25 1</diffuse></material></visual>
+        <visual name="cab"><pose>2.0 0 0.6 0 0 0</pose><geometry><box><size>1.8 2.4 1.2</size></box></geometry><material><ambient>0.15 0.25 0.15 1</ambient></material></visual>
+      </link>
+    </model>
+
+    <model name="vehicle_tactical_atv_quad">
+      <pose>22 36 0.6 0 0 0</pose>
+      <link name="chassis">
+        <collision name="col"><geometry><box><size>2.0 1.2 1.0</size></box></geometry></collision>
+        <visual name="body"><geometry><box><size>1.8 1.1 0.7</size></box></geometry><material><ambient>0.15 0.4 0.6 1</ambient><diffuse>0.2 0.5 0.75 1</diffuse></material></visual>
+      </link>
+    </model>
+
+    <model name="vehicle_foreign_offroader">
+      <pose>-15 45 0.9 0 0 0</pose>
+      <link name="chassis">
+        <collision name="col"><geometry><box><size>4.2 2.0 1.8</size></box></geometry></collision>
+        <visual name="body"><geometry><box><size>4.0 1.9 1.4</size></box></geometry><material><ambient>0.4 0.1 0.1 1</ambient><diffuse>0.6 0.15 0.15 1</diffuse></material></visual>
+      </link>
+    </model>
+
+    <model name="vehicle_outpost_utility_rover">
+      <pose>60 -10 0.7 0 0 0</pose>
+      <link name="chassis">
+        <collision name="col"><geometry><box><size>2.8 1.6 1.4</size></box></geometry></collision>
+        <visual name="body"><geometry><box><size>2.6 1.5 1.0</size></box></geometry><material><ambient>0.6 0.5 0.1 1</ambient><diffuse>0.75 0.65 0.15 1</diffuse></material></visual>
+      </link>
+    </model>
+
+    <!-- Additional Wildlife -->
+    <model name="wildlife_deer_fawn">
+      <pose>-52 44 0.45 0 0 0</pose>
+      <link name="animal_link">
+        <collision name="col"><geometry><box><size>0.9 0.4 0.8</size></box></geometry></collision>
+        <visual name="body"><geometry><box><size>0.8 0.35 0.45</size></box></geometry><material><ambient>0.65 0.42 0.22 1</ambient><diffuse>0.72 0.48 0.25 1</diffuse></material></visual>
+      </link>
+    </model>
+
+    <model name="wildlife_bighorn_sheep">
+      <pose>68 12 0.65 0 0 0</pose>
+      <link name="animal_link">
+        <collision name="col"><geometry><box><size>1.3 0.5 1.1</size></box></geometry></collision>
+        <visual name="body"><geometry><box><size>1.2 0.45 0.6</size></box></geometry><material><ambient>0.75 0.75 0.7 1</ambient><diffuse>0.85 0.85 0.8 1</diffuse></material></visual>
+      </link>
+    </model>
+
+    <model name="wildlife_north_wolf">
+      <pose>25 70 0.55 0 0 0</pose>
+      <link name="animal_link">
+        <collision name="col"><geometry><box><size>1.2 0.4 0.8</size></box></geometry></collision>
+        <visual name="body"><geometry><box><size>1.1 0.35 0.5</size></box></geometry><material><ambient>0.35 0.35 0.38 1</ambient><diffuse>0.45 0.45 0.48 1</diffuse></material></visual>
+      </link>
+    </model>
+
+    <!-- Additional Hazards & Infrastructure -->
+    <model name="hazard_campfire">
+      <static>true</static>
+      <pose>-48 55 0.3 0 0 0</pose>
+      <link name="fire_link">
+        <visual name="flame"><geometry><cone><radius>0.6</radius><length>0.9</length></cone></geometry><material><ambient>1 0.4 0 1</ambient><diffuse>1 0.6 0.1 1</diffuse><emissive>1 0.6 0.1 1</emissive></material></visual>
+      </link>
+    </model>
+
+    <model name="hazard_cargo_container">
+      <static>true</static>
+      <pose>12 36 1.1 0 0 0.3</pose>
+      <link name="cargo_link">
+        <collision name="col"><geometry><box><size>2.5 1.8 2.2</size></box></geometry></collision>
+        <visual name="box"><geometry><box><size>2.5 1.8 2.2</size></box></geometry><material><ambient>0.25 0.35 0.45 1</ambient><diffuse>0.3 0.45 0.6 1</diffuse></material></visual>
+      </link>
+    </model>
+
+    <model name="hazard_comms_tower_mast">
+      <static>true</static>
+      <pose>66 -18 4.0 0 0 0</pose>
+      <link name="mast_link">
+        <collision name="col"><geometry><cylinder><radius>0.4</radius><length>8.0</length></cylinder></geometry></collision>
+        <visual name="pole"><geometry><cylinder><radius>0.3</radius><length>8.0</length></cylinder></geometry><material><ambient>0.6 0.1 0.1 1</ambient><diffuse>0.8 0.15 0.15 1</diffuse></material></visual>
+      </link>
+    </model>
+
     <!-- Zone Boundary Visual Pylons -->
     <model name="marker_zone_alpha"><static>true</static><pose>0 29 1.5 0 0 0</pose><link name="l"><visual name="v"><geometry><cylinder><radius>0.15</radius><length>3</length></cylinder></geometry><material><ambient>0.1 0.8 0.1 1</ambient><emissive>0.1 0.7 0.1 1</emissive></material></visual></link></model>
     <model name="marker_zone_bravo"><static>true</static><pose>-50 50 2 0 0 0</pose><link name="l"><visual name="v"><geometry><cylinder><radius>0.15</radius><length>4</length></cylinder></geometry><material><ambient>0.1 0.6 0.9 1</ambient><emissive>0.1 0.5 0.9 1</emissive></material></visual></link></model>

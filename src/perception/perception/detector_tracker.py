@@ -37,30 +37,51 @@ class TrackedObject:
 class ObjectDetectorTracker:
     """High-accuracy multi-class object detection and persistent tracking."""
 
-    # Ground-truth entity catalog across surveillance theater
+    # Ground-truth entity catalog across surveillance theater (37 diverse targets)
     KNOWN_ACTORS = [
-        # Zone Alpha (Base HQ, North Gate, Logistics)
+        # Zone Alpha: Base HQ, North Gate, Logistics, Comms, Hangar
         {"label": "Man (Home Patrol Guard)", "category": "person", "gender": "man", "pos": (6.0, 20.0), "territory": "HOME", "size": (0.65, 1.80), "temp_c": 37.1},
         {"label": "Woman (Logistics Officer)", "category": "person", "gender": "woman", "pos": (-10.0, -25.0), "territory": "HOME", "size": (0.60, 1.72), "temp_c": 36.9},
         {"label": "Woman (Border Officer)", "category": "person", "gender": "woman", "pos": (-15.0, 28.0), "territory": "HOME", "size": (0.60, 1.74), "temp_c": 37.0},
+        {"label": "Man (Base Commander Vance)", "category": "person", "gender": "man", "pos": (0.0, -35.0), "territory": "HOME", "size": (0.68, 1.82), "temp_c": 37.1},
+        {"label": "Man (Hangar Mechanic Miller)", "category": "person", "gender": "man", "pos": (-20.0, -18.0), "territory": "HOME", "size": (0.65, 1.78), "temp_c": 37.0},
+        {"label": "Woman (Comms Specialist)", "category": "person", "gender": "woman", "pos": (15.0, -20.0), "territory": "HOME", "size": (0.60, 1.71), "temp_c": 36.8},
+        {"label": "Man (Main Gate Guard)", "category": "person", "gender": "man", "pos": (0.0, 27.5), "territory": "HOME", "size": (0.65, 1.80), "temp_c": 37.2},
+        {"label": "Patrol SUV (Border Roadway)", "category": "vehicle", "pos": (0.0, 35.0), "territory": "HOME", "size": (2.20, 1.85), "temp_c": 89.5},
+        {"label": "Military Transport Truck 6x6", "category": "vehicle", "pos": (-25.0, -35.0), "territory": "HOME", "size": (2.80, 2.90), "temp_c": 92.0},
+        {"label": "HQ Command SUV (Parked)", "category": "vehicle", "pos": (12.0, -32.0), "territory": "HOME", "size": (2.20, 1.85), "temp_c": 84.0},
 
-        # Zone Delta (Eastern Outpost Ridge & Watchtower)
+        # Zone Delta: Eastern Outpost Ridge, Bluff, Watchtower, Bridge
         {"label": "Man (Outpost Ridge Sentry)", "category": "person", "gender": "man", "pos": (65.0, -15.0), "territory": "HOME", "size": (0.65, 1.82), "temp_c": 37.2},
+        {"label": "Man (Bridge Sentry Kowalski)", "category": "person", "gender": "man", "pos": (0.0, 58.0), "territory": "HOME", "size": (0.65, 1.81), "temp_c": 37.1},
+        {"label": "Man (Eastern Lookout Guard)", "category": "person", "gender": "man", "pos": (70.0, -25.0), "territory": "HOME", "size": (0.65, 1.80), "temp_c": 37.0},
+        {"label": "Woman (Perimeter Patrol Officer)", "category": "person", "gender": "woman", "pos": (44.0, 15.0), "territory": "HOME", "size": (0.60, 1.74), "temp_c": 36.9},
         {"label": "Animal (Mountain Deer)", "category": "wildlife", "animal_type": "mountain_deer", "pos": (72.0, 5.0), "territory": "HOME", "size": (1.40, 1.30), "temp_c": 35.1},
+        {"label": "Animal (Mountain Bighorn Sheep)", "category": "wildlife", "animal_type": "sheep", "pos": (68.0, 12.0), "territory": "HOME", "size": (1.30, 1.10), "temp_c": 35.3},
+        {"label": "Outpost Utility Rover", "category": "vehicle", "pos": (60.0, -10.0), "territory": "HOME", "size": (1.80, 1.50), "temp_c": 75.0},
+        {"label": "Comms Tower Repeater Mast", "category": "hazard", "pos": (66.0, -18.0), "territory": "HOME", "size": (1.00, 8.00), "temp_c": 22.0},
 
-        # Zone Bravo (Western Deep Pine Forest)
+        # Zone Bravo: Western Deep Pine Forest, Clearings, Wilderness
         {"label": "Man (Foreign Forest Hiker)", "category": "person", "gender": "man", "pos": (-65.0, 50.0), "territory": "FOREIGN", "size": (0.65, 1.80), "temp_c": 37.0},
+        {"label": "Man (Deep Forest Scout)", "category": "person", "gender": "man", "pos": (-50.0, 48.0), "territory": "FOREIGN", "size": (0.65, 1.79), "temp_c": 37.1},
+        {"label": "Woman (Forest Forager)", "category": "person", "gender": "woman", "pos": (-60.0, 38.0), "territory": "FOREIGN", "size": (0.60, 1.70), "temp_c": 36.9},
         {"label": "Animal (Wildlife Deer Stag)", "category": "wildlife", "animal_type": "stag", "pos": (-55.0, 42.0), "territory": "FOREIGN", "size": (1.60, 1.45), "temp_c": 35.3},
         {"label": "Animal (Wildlife Deer Doe)", "category": "wildlife", "animal_type": "doe", "pos": (-45.0, 68.0), "territory": "FOREIGN", "size": (1.35, 1.25), "temp_c": 34.9},
+        {"label": "Animal (Wildlife Deer Fawn)", "category": "wildlife", "animal_type": "fawn", "pos": (-52.0, 44.0), "territory": "FOREIGN", "size": (0.90, 0.85), "temp_c": 35.0},
         {"label": "Thermal Hazard (Wildfire)", "category": "fire", "pos": (-65.0, 65.0), "territory": "FOREIGN", "size": (6.00, 5.00), "temp_c": 585.0},
+        {"label": "Thermal Hazard (Campfire)", "category": "fire", "pos": (-48.0, 55.0), "territory": "FOREIGN", "size": (1.20, 1.00), "temp_c": 420.0},
 
-        # Zone Charlie (River Corridor, Roadway & Northern Border Ridge)
+        # Zone Charlie: River Corridor, Roadway, Northern Border Ridge
         {"label": "Man (Foreign Border Crosser)", "category": "person", "gender": "man", "pos": (15.0, 38.0), "territory": "FOREIGN", "size": (0.65, 1.80), "temp_c": 37.1},
         {"label": "Woman (High Ground Observer)", "category": "person", "gender": "woman", "pos": (58.0, 74.0), "territory": "FOREIGN", "size": (0.60, 1.73), "temp_c": 36.8},
         {"label": "Woman (Riverbank Civilian)", "category": "person", "gender": "woman", "pos": (42.0, 56.0), "territory": "FOREIGN", "size": (0.60, 1.70), "temp_c": 36.9},
         {"label": "Man (Northern Woodsman)", "category": "person", "gender": "man", "pos": (-8.0, 66.0), "territory": "FOREIGN", "size": (0.68, 1.84), "temp_c": 37.2},
         {"label": "Animal (Riverbank Forest Elk)", "category": "wildlife", "animal_type": "elk", "pos": (-20.0, 62.0), "territory": "FOREIGN", "size": (2.10, 1.70), "temp_c": 35.4},
-        {"label": "Patrol SUV (Border Roadway)", "category": "vehicle", "pos": (0.0, 35.0), "territory": "HOME", "size": (2.20, 1.85), "temp_c": 89.5}
+        {"label": "Animal (Forest Elk Doe)", "category": "wildlife", "animal_type": "elk_doe", "pos": (-24.0, 66.0), "territory": "FOREIGN", "size": (1.80, 1.55), "temp_c": 35.1},
+        {"label": "Animal (North Ridge Wolf)", "category": "wildlife", "animal_type": "wolf", "pos": (25.0, 70.0), "territory": "FOREIGN", "size": (1.20, 0.85), "temp_c": 36.2},
+        {"label": "Tactical Border ATV Quad", "category": "vehicle", "pos": (22.0, 36.0), "territory": "HOME", "size": (1.40, 1.20), "temp_c": 78.0},
+        {"label": "Foreign 4x4 Off-Roader", "category": "vehicle", "pos": (-15.0, 45.0), "territory": "FOREIGN", "size": (2.30, 1.90), "temp_c": 91.0},
+        {"label": "Abandoned Cargo Container", "category": "hazard", "pos": (12.0, 36.0), "territory": "FOREIGN", "size": (2.50, 2.20), "temp_c": 19.5}
     ]
 
     def __init__(self, confidence_threshold: float = 0.45):
