@@ -285,29 +285,52 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnReset = document.getElementById('btnResetMission');
 
   let trailPoints = [];
+  let lastWsMessageTime = 0;
 
   function connectWebSocket() {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${window.location.host}/ws/telemetry`;
-    ws = new WebSocket(wsUrl);
+    try {
+      ws = new WebSocket(wsUrl);
 
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        updateTelemetryUI(data);
-      } catch (err) {
-        console.error("Telemetry parse error", err);
-      }
-    };
+      ws.onmessage = (event) => {
+        try {
+          lastWsMessageTime = Date.now();
+          const data = JSON.parse(event.data);
+          updateTelemetryUI(data);
+        } catch (err) {
+          console.error("Telemetry parse error", err);
+        }
+      };
 
-    ws.onclose = () => {
-      setTimeout(connectWebSocket, 1500);
-    };
+      ws.onclose = () => {
+        setTimeout(connectWebSocket, 1500);
+      };
 
-    ws.onerror = () => {
-      ws.close();
-    };
+      ws.onerror = () => {
+        try { ws.close(); } catch (e) {}
+      };
+    } catch (e) {
+      console.warn("WebSocket init error:", e);
+    }
   }
+
+  // Resilient High-Frequency HTTP Telemetry Polling Fallback (10 Hz)
+  async function pollTelemetryFallback() {
+    const isWsStale = (!ws || ws.readyState !== WebSocket.OPEN || (Date.now() - lastWsMessageTime > 600));
+    if (isWsStale) {
+      try {
+        const resp = await fetch('/api/telemetry?_t=' + Date.now());
+        if (resp.ok) {
+          const telem = await resp.json();
+          updateTelemetryUI(telem);
+        }
+      } catch (err) {
+        // Silently handle transient connection errors during reload
+      }
+    }
+  }
+  setInterval(pollTelemetryFallback, 100);
 
   function formatTime(seconds) {
     if (!seconds || seconds < 0) return "00:00:00";
@@ -623,20 +646,45 @@ document.addEventListener('DOMContentLoaded', () => {
       if (activeBoxes.includes(b)) {
         b.classList.remove('hidden');
         if (img) {
-          const streamSrc = img.dataset.streamSrc || img.getAttribute('data-stream-src');
-          if (streamSrc && (!img.src || img.src === window.location.href || img.src.endsWith('/'))) {
+          const streamSrc = img.getAttribute('data-stream-src') || img.dataset.streamSrc;
+          if (streamSrc && (!img.src || !img.src.includes(streamSrc))) {
             img.src = streamSrc;
           }
         }
       } else {
         b.classList.add('hidden');
-        if (img) {
-          // Sever perpetual MJPEG HTTP stream to avoid browser connection pool exhaustion
-          img.src = "";
+        if (img && img.src && !img.src.startsWith('data:image')) {
+          // Sever perpetual MJPEG HTTP stream cleanly without generating broken image icon
+          img.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E";
         }
       }
     });
     setTimeout(() => map && map.invalidateSize(), 150);
+  }
+
+  // Fullscreen Engine for Camera Suite & Viewports
+  function toggleFullscreen(elem) {
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+      if (elem.requestFullscreen) {
+        elem.requestFullscreen();
+      } else if (elem.webkitRequestFullscreen) {
+        elem.webkitRequestFullscreen();
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      }
+    }
+  }
+
+  const btnFullscreenStage = document.getElementById('btnFullscreenStage');
+  if (btnFullscreenStage) {
+    btnFullscreenStage.addEventListener('click', () => {
+      const stage = document.querySelector('.camera-stage') || cameraViewports;
+      if (stage) toggleFullscreen(stage);
+    });
   }
 
   layoutButtons.forEach(btn => {
@@ -769,6 +817,16 @@ document.addEventListener('DOMContentLoaded', () => {
           state.panY = 0;
           setZoom(1.0);
           playTacticalTone(520, 0.04);
+        });
+      }
+
+      // Fullscreen Viewport Button
+      const fsBtn = toolbar.querySelector('.btn-zoom-fs');
+      if (fsBtn) {
+        fsBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const camBox = toolbar.closest('.cam-box');
+          if (camBox) toggleFullscreen(camBox);
         });
       }
 
