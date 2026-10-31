@@ -36,7 +36,7 @@ if [ -f "$WS_DIR/venv/bin/activate" ]; then
 fi
 
 # 4. Environment Variables for Gazebo & Python
-export PYTHONPATH="$WS_DIR/src:$WS_DIR/src/ground_control:$WS_DIR/src/event_manager:$WS_DIR/src/coverage_planner:$WS_DIR/src/mission_manager:$WS_DIR/src/perception:$WS_DIR/src/battery_manager:$WS_DIR/src/mission_reports:$WS_DIR/src/system_bringup:$WS_DIR/src/ground_control/components:$PYTHONPATH"
+export PYTHONPATH="$WS_DIR/src:$WS_DIR/src/ground_control:$WS_DIR/src/event_manager:$WS_DIR/src/coverage_planner:$WS_DIR/src/mission_manager:$WS_DIR/src/perception:$WS_DIR/src/battery_manager:$WS_DIR/src/mission_reports:$WS_DIR/src/system_bringup:$WS_DIR/src/personnel_security:$WS_DIR/src/ground_control/components:$PYTHONPATH"
 export GZ_SIM_RESOURCE_PATH="$WS_DIR/src/drone_description/models:$WS_DIR/src/surveillance_world/models:$GZ_SIM_RESOURCE_PATH"
 export GZ_SIM_SYSTEM_PLUGIN_PATH="/opt/ros/jazzy/opt/gz_sim_vendor/lib/gz-sim-8/plugins:$GZ_SIM_SYSTEM_PLUGIN_PATH"
 export PYTHONUNBUFFERED=1
@@ -48,6 +48,7 @@ cleanup() {
     echo "[INFO] Shutting down simulation background services..."
     kill $(jobs -p) 2>/dev/null || true
     killall -9 gz-sim-server gz-sim-gui parameter_bridge orchestrator perception_node uvicorn 2>/dev/null || true
+    pkill -f "personnel_security" 2>/dev/null || true
     echo "[OK] Cleaned up."
     exit 0
 }
@@ -55,6 +56,7 @@ trap cleanup SIGINT SIGTERM EXIT
 
 # Kill any lingering stale processes from prior runs
 killall -9 gz-sim-server gz-sim-gui parameter_bridge orchestrator perception_node uvicorn 2>/dev/null || true
+pkill -f "personnel_security" 2>/dev/null || true
 rm -f "$WS_DIR/data/db/command_queue.json"
 
 case "$MODE" in
@@ -107,6 +109,15 @@ case "$MODE" in
         PERC_PID=$!
         sleep 1
 
+        echo "[INFO] Starting Multi-Layer Personnel Security Stack (6 Nodes)..."
+        "$WS_DIR/venv/bin/python3" -m personnel_security.personnel_tag_node &
+        "$WS_DIR/venv/bin/python3" -m personnel_security.credential_authentication_node &
+        "$WS_DIR/venv/bin/python3" -m personnel_security.face_verification_node &
+        "$WS_DIR/venv/bin/python3" -m personnel_security.identity_correlation_node &
+        "$WS_DIR/venv/bin/python3" -m personnel_security.activity_assessment_node &
+        "$WS_DIR/venv/bin/python3" -m personnel_security.personnel_event_logger &
+        sleep 1
+
         echo "[INFO] Launching Modern Ground Control Station on http://localhost:8080 ..."
         "$WS_DIR/venv/bin/python3" -m uvicorn ground_control.server:app --host 0.0.0.0 --port 8080
         ;;
@@ -138,6 +149,15 @@ case "$MODE" in
         echo "[INFO] Starting Perception & Computer Vision Node..."
         "$WS_DIR/venv/bin/python3" -m perception.perception_node &
         PERC_PID=$!
+        sleep 1
+
+        echo "[INFO] Starting Multi-Layer Personnel Security Stack (6 Nodes)..."
+        "$WS_DIR/venv/bin/python3" -m personnel_security.personnel_tag_node &
+        "$WS_DIR/venv/bin/python3" -m personnel_security.credential_authentication_node &
+        "$WS_DIR/venv/bin/python3" -m personnel_security.face_verification_node &
+        "$WS_DIR/venv/bin/python3" -m personnel_security.identity_correlation_node &
+        "$WS_DIR/venv/bin/python3" -m personnel_security.activity_assessment_node &
+        "$WS_DIR/venv/bin/python3" -m personnel_security.personnel_event_logger &
         sleep 1
 
         echo "[INFO] Launching Modern Ground Control Station on http://localhost:8080 ..."
