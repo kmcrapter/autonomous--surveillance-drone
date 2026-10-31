@@ -759,27 +759,56 @@ class SystemOrchestrator(Node):
         detection_footprint_r = max(16.0, self.drone_pos[2] * 1.45)
 
         for ent in self.sim_entities:
-            dist = math.sqrt((ent["pos"][0] - self.drone_pos[0])**2 + (ent["pos"][1] - self.drone_pos[1])**2)
-            # Downward footprint in Country A OR Forward Camera Optical/Thermal standoff observing Country B
-            in_downward_footprint = (dist <= detection_footprint_r)
-            is_forward_target = (ent["pos"][1] > self.drone_pos[1])
-            dx_lateral = abs(ent["pos"][0] - self.drone_pos[0])
-            dy_forward = ent["pos"][1] - self.drone_pos[1]
-            in_forward_standoff = (is_forward_target and dy_forward <= 55.0 and dx_lateral <= 35.0 and dist <= 62.0)
+            dx_global = ent["pos"][0] - self.drone_pos[0]
+            dy_global = ent["pos"][1] - self.drone_pos[1]
+            dist = math.sqrt(dx_global**2 + dy_global**2)
 
-            if (in_downward_footprint or in_forward_standoff) and self.drone_pos[2] > 2.0:
+            # Downward Nadir optical/thermal footprint
+            in_downward_footprint = (dist <= detection_footprint_r)
+
+            # High-precision body-frame forward line-of-sight tracking accounting for drone heading
+            cos_y = math.cos(self.yaw)
+            sin_y = math.sin(self.yaw)
+            body_forward = dx_global * cos_y + dy_global * sin_y
+            body_lateral = abs(-dx_global * sin_y + dy_global * cos_y)
+
+            # 360-degree multi-camera panoramic sensor coverage:
+            in_forward_standoff = (body_forward > 0 and body_forward <= 65.0 and body_lateral <= max(35.0, body_forward * 0.85) and dist <= 70.0)
+            in_panoramic_coverage = (dist <= 55.0)
+
+            if (in_downward_footprint or in_forward_standoff or in_panoramic_coverage) and self.drone_pos[2] > 1.2:
                 is_foreign = (ent["pos"][1] > self.BORDER_LINE_Y)
                 territory = "FOREIGN (Country B)" if is_foreign else "HOME (Country A)"
 
-                # International Border Proximity / Defense Status
+                # International Border Proximity / Defense Status Decision Engine
                 dist_to_border = abs(ent["pos"][1] - self.BORDER_LINE_Y)
                 border_alert = "MONITORED"
-                if is_foreign and dist_to_border <= 12.0:
+                if is_foreign and dist_to_border <= 10.0:
                     border_alert = "BORDER_PROXIMITY_ALERT"
                 elif not is_foreign and ent.get("territory") == "FOREIGN":
                     border_alert = "BORDER_CROSSING_DETECTED"
                 elif not is_foreign:
                     border_alert = "AUTHORIZED_HOME_PATROL"
+
+                cam_source = "forward_rgb" if in_forward_standoff else ("downward_rgb" if in_downward_footprint else "pentagrid")
+
+                # Dynamic projected camera bounding box
+                if in_forward_standoff and body_forward > 2.0:
+                    img_w, img_h = 640, 480
+                    fx = (img_w / 2.0) / math.tan(1.4 / 2.0)
+                    fy = fx
+                    u_proj = int((img_w / 2.0) + fx * ((-dx_global * sin_y + dy_global * cos_y) / body_forward))
+                    v_proj = int((img_h / 2.0) + fy * (self.drone_pos[2] / body_forward))
+                    real_w, real_h = ent.get("size", (0.65, 1.80))
+                    bx_w = max(10, int(round(fx * (real_w / body_forward))))
+                    bx_h = max(14, int(round(fy * (real_h / body_forward))))
+                    x1 = max(0, min(img_w - bx_w, u_proj - bx_w // 2))
+                    y2 = max(bx_h, min(img_h, v_proj))
+                    y1 = max(0, y2 - bx_h)
+                    x2 = x1 + bx_w
+                    bbox = [x1, y1, x2, y2]
+                else:
+                    bbox = [240, 160, 320, 240]
 
                 det = {
                     "track_id": ent["id"],
@@ -790,9 +819,9 @@ class SystemOrchestrator(Node):
                     "territory": territory,
                     "border_alert": border_alert,
                     "confidence": 0.94 if ent["category"] != "wildlife" else 0.88,
-                    "bbox": [180, 140, 260, 260],
+                    "bbox": bbox,
                     "world_pos": (round(ent["pos"][0], 1), round(ent["pos"][1], 1)),
-                    "camera_source": "forward_rgb"
+                    "camera_source": cam_source
                 }
                 active_detections.append(det)
 
