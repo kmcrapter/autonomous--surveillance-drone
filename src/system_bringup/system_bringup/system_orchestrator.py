@@ -871,8 +871,12 @@ class SystemOrchestrator(Node):
         cur_zone = ZoneManager.which_zone(self.drone_pos[0], self.drone_pos[1])
 
         # Determine Propeller Activity: Propellers only start when mission is initiated or actively flying
-        is_propellers_active = (self.flight_state in ["PRECHECK", "TAKEOFF", "SURVEYING", "RETURNING", "LANDING", "RESUMING", "AVOIDING"]) or \
-                               (self.control_mode == "MANUAL_REMOTE" and (self.drone_pos[2] > 0.6 or abs(cmd_vx) > 0.05 or abs(cmd_vy) > 0.05 or abs(cmd_vz) > 0.05))
+        # When landed on pad or ground (z <= 0.55m or landed/docking states), propellers are strictly STOPPED (0 RPM)
+        is_touchdown = (self.drone_pos[2] <= 0.55) and (self.flight_state in ["LANDING", "CHARGING", "IDLE", "COMPLETE", "LANDED"] or self.control_mode == "MANUAL_REMOTE")
+        is_propellers_active = not is_touchdown and (
+            (self.flight_state in ["PRECHECK", "TAKEOFF", "SURVEYING", "RETURNING", "LANDING", "RESUMING", "AVOIDING"]) or
+            (self.control_mode == "MANUAL_REMOTE" and (self.drone_pos[2] > 0.6 or abs(cmd_vx) > 0.05 or abs(cmd_vy) > 0.05 or abs(cmd_vz) > 0.05))
+        )
         target_rotor_vels = [85.0, -85.0, 85.0, -85.0] if is_propellers_active else [0.0, 0.0, 0.0, 0.0]
 
         # Construct Comprehensive Telemetry Dictionary

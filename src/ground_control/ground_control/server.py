@@ -267,11 +267,16 @@ def get_telemetry_snapshot() -> Dict[str, Any]:
 
     # Compute detailed subsystem avionics diagnostics (Hexacopter M1..M6, ESCs, 6S Cells, RF Link)
     state = data.get("flight_state", "IDLE")
+    alt = data.get("position", {}).get("z", 0.49)
     prop_info = data.get("propellers", {})
     if "active" in prop_info:
         prop_active = bool(prop_info["active"])
     else:
         prop_active = state in ["SURVEYING", "TAKEOFF", "RETURNING", "AVOIDING", "RESUMING"]
+    
+    # Strictly halt all propellers when drone has landed (alt <= 0.55m or landed/charging states)
+    if alt <= 0.55 or state in ["IDLE", "CHARGING", "COMPLETE", "LANDED"]:
+        prop_active = False
     is_flying = prop_active
     base_rpm = 5240 if prop_active else 0
     jitter = lambda: int(np.random.randint(-18, 19)) if prop_active else 0

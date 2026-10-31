@@ -486,7 +486,8 @@ document.addEventListener('DOMContentLoaded', () => {
         rpmBox.innerHTML = av.motor_rpms.map((rpm, i) => {
           const isSpinning = rpm > 0;
           const statusClass = isSpinning ? 'rpm-chip active font-mono' : 'rpm-chip stopped font-mono';
-          return `<span class="${statusClass}" title="${isSpinning ? 'Propeller Spinning' : 'Propeller Stopped'}">M${i+1}: ${rpm}</span>`;
+          const label = isSpinning ? `M${i+1}: ${rpm}` : `M${i+1}: 0 (STOP)`;
+          return `<span class="${statusClass}" title="${isSpinning ? 'Propeller Spinning' : 'Propeller Stopped (Landed)'}">${label}</span>`;
         }).join('');
       }
       const lipoBox = document.getElementById('lipoCellChips');
