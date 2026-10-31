@@ -5,6 +5,7 @@ import sys
 import time
 import json
 import asyncio
+import math
 from typing import Dict, Any, List, Optional
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Body
@@ -49,6 +50,7 @@ LIVE_DOWNWARD_PATH = os.path.join(DB_DIR, "live_downward_rgb.jpg")
 LIVE_REAR_PATH = os.path.join(DB_DIR, "live_rear_rgb.jpg")
 LIVE_LEFT_PATH = os.path.join(DB_DIR, "live_left_rgb.jpg")
 LIVE_RIGHT_PATH = os.path.join(DB_DIR, "live_right_rgb.jpg")
+LIVE_PENTAGRID_PATH = os.path.join(DB_DIR, "live_pentagrid.jpg")
 CAMERA_STATUS_PATH = os.path.join(DB_DIR, "camera_status.json")
 THERMAL_CMD_PATH = os.path.join(DB_DIR, "thermal_cmd.json")
 
@@ -119,6 +121,12 @@ def init_camera_buffers():
         cv2.putText(frame, "CAM-4 STARBOARD FLANK 90 [ONLINE]", (20, 30),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 240, 180), 1, cv2.LINE_AA)
         cv2.imwrite(LIVE_RIGHT_PATH, frame)
+
+    if not os.path.exists(LIVE_PENTAGRID_PATH) or os.path.getsize(LIVE_PENTAGRID_PATH) < 100:
+        p_frame = np.full((540, 960, 3), 20, dtype=np.uint8)
+        cv2.putText(p_frame, "360+NADIR 5-CAMERA PANORAMIC ARRAY [INITIALIZING...]", (40, 60),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 240, 255), 2, cv2.LINE_AA)
+        cv2.imwrite(LIVE_PENTAGRID_PATH, p_frame)
 
 init_camera_buffers()
 
@@ -412,6 +420,14 @@ def stream_right():
     """Live MJPEG stream of Starboard Right Flank 90 Camera."""
     return StreamingResponse(
         mjpeg_frame_generator(LIVE_RIGHT_PATH, "STARBOARD RIGHT FLANK 90 CAMERA [CONNECTING...]"),
+        media_type="multipart/x-mixed-replace; boundary=frame"
+    )
+
+@app.get("/api/stream/pentagrid")
+def stream_pentagrid():
+    """Live MJPEG stream of Consolidated 5-Camera 360+Nadir Panoramic Array."""
+    return StreamingResponse(
+        mjpeg_frame_generator(LIVE_PENTAGRID_PATH, "360+NADIR 5-CAMERA PANORAMIC ARRAY [CONNECTING...]"),
         media_type="multipart/x-mixed-replace; boundary=frame"
     )
 

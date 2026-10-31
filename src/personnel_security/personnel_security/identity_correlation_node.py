@@ -16,6 +16,7 @@ VOICE_ANNOUNCEMENT_TEXT = (
 )
 
 OPERATOR_ACTION_QUEUE_FILE = "/home/hari/.gemini/antigravity/scratch/surveillance_drone_ws/data/db/operator_action_queue.json"
+PERSONNEL_STATE_FILE = "/home/hari/.gemini/antigravity/scratch/surveillance_drone_ws/data/db/personnel_state.json"
 
 class IdentityCorrelationNode(Node):
     def __init__(self):
@@ -346,15 +347,27 @@ class IdentityCorrelationNode(Node):
             correlated_entities.append(entity_record)
 
         # Publish unified correlated identities
-        out_msg = String()
-        out_msg.data = json.dumps({
+        out_payload = {
             "timestamp": now,
             "entity_count": len(correlated_entities),
             "identities": correlated_entities,
             "announcements": self.announcements_history[-10:],
             "active_alerts": self.emitted_alerts[-10:]
-        })
+        }
+        out_msg = String()
+        out_msg.data = json.dumps(out_payload)
         self.identities_pub.publish(out_msg)
+
+        # Atomic persistence for Ground Control Station Dashboard
+        temp_state_file = PERSONNEL_STATE_FILE + f".tmp.{os.getpid()}"
+        try:
+            with open(temp_state_file, "w") as f:
+                json.dump(out_payload, f)
+            os.replace(temp_state_file, PERSONNEL_STATE_FILE)
+        except Exception:
+            if os.path.exists(temp_state_file):
+                try: os.remove(temp_state_file)
+                except OSError: pass
 
 def main(args=None):
     rclpy.init(args=args)

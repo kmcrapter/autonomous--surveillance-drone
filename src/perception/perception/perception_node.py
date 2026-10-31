@@ -28,6 +28,7 @@ LIVE_DOWNWARD_PATH = "/home/hari/.gemini/antigravity/scratch/surveillance_drone_
 LIVE_REAR_PATH = "/home/hari/.gemini/antigravity/scratch/surveillance_drone_ws/data/db/live_rear_rgb.jpg"
 LIVE_LEFT_PATH = "/home/hari/.gemini/antigravity/scratch/surveillance_drone_ws/data/db/live_left_rgb.jpg"
 LIVE_RIGHT_PATH = "/home/hari/.gemini/antigravity/scratch/surveillance_drone_ws/data/db/live_right_rgb.jpg"
+LIVE_PENTAGRID_PATH = "/home/hari/.gemini/antigravity/scratch/surveillance_drone_ws/data/db/live_pentagrid.jpg"
 LIVE_OVERVIEW_PATH = "/home/hari/.gemini/antigravity/scratch/surveillance_drone_ws/data/db/live_world_overview.jpg"
 LIVE_THERMAL_PATH = "/home/hari/.gemini/antigravity/scratch/surveillance_drone_ws/data/db/live_thermal.jpg"
 LIVE_NVG_PATH = "/home/hari/.gemini/antigravity/scratch/surveillance_drone_ws/data/db/live_nvg.jpg"
@@ -157,51 +158,41 @@ class PerceptionNode(Node):
         px, py, pz = self.drone_pos
         yaw = (self.drone_yaw + yaw_offset) % (2 * math.pi)
 
-        scene_actors = [
-            # Zone Alpha (Base HQ, Gate, Logistics, Comms, Hangar)
-            (6.0, 20.0, "man", (0, 140, 255), (0.65, 1.80)),
-            (-10.0, -25.0, "woman", (200, 130, 40), (0.60, 1.72)),
-            (-15.0, 28.0, "woman", (35, 120, 45), (0.60, 1.74)),
-            (0.0, -35.0, "man", (40, 110, 220), (0.68, 1.82)),
-            (-20.0, -18.0, "man", (180, 100, 40), (0.65, 1.78)),
-            (15.0, -20.0, "woman", (160, 70, 190), (0.60, 1.71)),
-            (0.0, 27.5, "man", (50, 150, 240), (0.65, 1.80)),
-            (0.0, 35.0, "vehicle", (30, 50, 120), (2.20, 1.85)),
-            (-25.0, -35.0, "vehicle", (45, 65, 50), (2.80, 2.90)),
-            (12.0, -32.0, "vehicle", (60, 60, 70), (2.20, 1.85)),
+        cur_t = time.time()
+        scene_actors = []
+        for act in self.tracker.KNOWN_ACTORS:
+            if "route" in act and len(act["route"]) > 1:
+                route = act["route"]
+                spd = act.get("speed", 1.0)
+                idx = int((cur_t * spd) % len(route))
+                next_idx = (idx + 1) % len(route)
+                alpha = (cur_t * spd) % 1.0
+                ax = (1.0 - alpha) * route[idx][0] + alpha * route[next_idx][0]
+                ay = (1.0 - alpha) * route[idx][1] + alpha * route[next_idx][1]
+            else:
+                ax, ay = act["pos"]
 
-            # Zone Delta (Eastern Outpost Ridge, Bluff, Watchtower, Bridge)
-            (65.0, -15.0, "man", (45, 100, 50), (0.65, 1.82)),
-            (0.0, 58.0, "man", (40, 120, 70), (0.65, 1.81)),
-            (70.0, -25.0, "man", (50, 90, 60), (0.65, 1.80)),
-            (44.0, 15.0, "woman", (140, 110, 50), (0.60, 1.74)),
-            (72.0, 5.0, "animal", (35, 80, 135), (1.40, 1.30)),
-            (68.0, 12.0, "animal", (180, 190, 195), (1.30, 1.10)),
-            (60.0, -10.0, "vehicle", (50, 80, 100), (1.80, 1.50)),
-            (66.0, -18.0, "cargo", (120, 120, 130), (1.00, 8.00)),
-
-            # Zone Bravo (Western Deep Pine Forest, Clearings)
-            (-65.0, 50.0, "man", (30, 80, 140), (0.65, 1.80)),
-            (-50.0, 48.0, "man", (60, 100, 50), (0.65, 1.79)),
-            (-60.0, 38.0, "woman", (80, 130, 160), (0.60, 1.70)),
-            (-55.0, 42.0, "animal", (35, 80, 140), (1.60, 1.45)),
-            (-45.0, 68.0, "animal", (40, 90, 150), (1.35, 1.25)),
-            (-52.0, 44.0, "animal", (45, 95, 160), (0.90, 0.85)),
-            (-65.0, 65.0, "fire", (20, 140, 255), (6.0, 5.0)),
-            (-48.0, 55.0, "fire", (20, 180, 255), (1.2, 1.0)),
-
-            # Zone Charlie (River Corridor, Roadway, Northern Border Ridge)
-            (15.0, 38.0, "man", (50, 50, 60), (0.65, 1.80)),
-            (58.0, 74.0, "woman", (40, 20, 180), (0.60, 1.73)),
-            (42.0, 56.0, "woman", (220, 150, 20), (0.60, 1.70)),
-            (-8.0, 66.0, "man", (35, 95, 45), (0.68, 1.84)),
-            (-20.0, 62.0, "animal", (25, 60, 110), (2.10, 1.70)),
-            (-24.0, 66.0, "animal", (30, 70, 120), (1.80, 1.55)),
-            (25.0, 70.0, "animal", (70, 75, 80), (1.20, 0.85)),
-            (22.0, 36.0, "vehicle", (30, 120, 140), (1.40, 1.20)),
-            (-15.0, 45.0, "vehicle", (40, 40, 80), (2.30, 1.90)),
-            (12.0, 36.0, "cargo", (60, 70, 90), (2.50, 2.20))
-        ]
+            cat = act["category"]
+            sz = act.get("size", (1.0, 1.0))
+            if cat == "building":
+                col = (110, 130, 150)
+                scene_actors.append((ax, ay, "building", col, sz))
+            elif cat == "person":
+                g = act.get("gender", "man")
+                col = (0, 140, 255) if g == "man" else (200, 130, 40)
+                scene_actors.append((ax, ay, g, col, sz))
+            elif cat == "vehicle":
+                col = (30, 70, 140)
+                scene_actors.append((ax, ay, "vehicle", col, sz))
+            elif cat == "wildlife":
+                col = (35, 80, 135)
+                scene_actors.append((ax, ay, "animal", col, sz))
+            elif cat == "fire":
+                col = (20, 140, 255)
+                scene_actors.append((ax, ay, "fire", col, sz))
+            elif cat == "hazard":
+                col = (70, 70, 90)
+                scene_actors.append((ax, ay, "cargo", col, sz))
 
         if is_nadir:
             # Top-down ground survey projection
@@ -233,9 +224,15 @@ class PerceptionNode(Node):
                 av = int(cy - rx * scale)
 
                 if 0 <= au < w and 0 <= av < h:
-                    rad = max(4, int(max(rw, rh) * scale * 0.5))
-                    cv2.circle(frame, (au, av), rad, acolor, -1)
-                    cv2.circle(frame, (au, av), rad + 2, (0, 255, 255), 1)
+                    if atype == "building":
+                        bw_px = max(6, int(rw * scale))
+                        bh_px = max(6, int(rh * scale))
+                        cv2.rectangle(frame, (au - bw_px//2, av - bh_px//2), (au + bw_px//2, av + bh_px//2), acolor, -1)
+                        cv2.rectangle(frame, (au - bw_px//2, av - bh_px//2), (au + bw_px//2, av + bh_px//2), (200, 230, 255), 1)
+                    else:
+                        rad = max(4, int(max(rw, rh) * scale * 0.5))
+                        cv2.circle(frame, (au, av), rad, acolor, -1)
+                        cv2.circle(frame, (au, av), rad + 2, (0, 255, 255), 1)
 
             return frame
 
@@ -324,7 +321,21 @@ class PerceptionNode(Node):
                         head_r = max(2, bh // 7)
                         cv2.circle(frame, (int(au), y1 + head_r), head_r, (160, 180, 220), -1)
                         cv2.rectangle(frame, (x1, y1 + head_r * 2), (x2, y2), acolor, -1)
-                        cv2.line(frame, (int(au), y1 + head_r * 2 + bh // 2), (int(au), y2), (20, 20, 25), 1)
+                        # Dynamic walking animation
+                        walk_phase = int(math.sin(cur_t * 6.5 + au) * max(2, bh // 5))
+                        cv2.line(frame, (int(au), y2 - bh // 4), (int(au + walk_phase), y2), (20, 20, 25), 2)
+                        cv2.line(frame, (int(au), y2 - bh // 4), (int(au - walk_phase), y2), (20, 20, 25), 2)
+                    elif atype == "building":
+                        # 3D building block with roof and windows
+                        cv2.rectangle(frame, (x1, y1), (x2, y2), acolor, -1)
+                        cv2.rectangle(frame, (x1, y1), (x2, y2), (40, 50, 60), 2)
+                        roof_h = max(3, bh // 5)
+                        cv2.rectangle(frame, (x1 - 2, y1 - roof_h), (x2 + 2, y1), (60, 70, 80), -1)
+                        win_w = max(3, bw // 7)
+                        win_h = max(3, bh // 4)
+                        if bw > 18 and bh > 12:
+                            for wx in range(x1 + win_w, x2 - win_w, max(4, win_w * 2)):
+                                cv2.rectangle(frame, (wx, y1 + win_h), (min(x2 - 2, wx + win_w), y1 + win_h * 2), (200, 230, 255), -1)
                     elif atype == "animal":
                         cv2.rectangle(frame, (x1, y1 + bh // 3), (x2, y2), acolor, -1)
                         cv2.circle(frame, (x2, y1 + bh // 3), max(3, bh // 5), acolor, -1)
@@ -483,6 +494,20 @@ class PerceptionNode(Node):
         cv2.imwrite(LIVE_THERMAL_PATH, thermal_frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
         cv2.imwrite(LIVE_NVG_PATH, nvg_frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
         cv2.imwrite(LIVE_OVERVIEW_PATH, overview_frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
+
+        # Construct Consolidated 360+Nadir 5-Camera Panoramic Array Frame (960 x 540)
+        penta_canvas = np.full((540, 960, 3), 15, dtype=np.uint8)
+        penta_canvas[5:245, 5:315] = cv2.resize(annotated_forward, (310, 240))
+        penta_canvas[5:245, 325:635] = cv2.resize(annotated_downward, (310, 240))
+        penta_canvas[5:245, 645:955] = cv2.resize(annotated_rear, (310, 240))
+        penta_canvas[255:535, 5:475] = cv2.resize(annotated_left, (470, 280))
+        penta_canvas[255:535, 485:955] = cv2.resize(annotated_right, (470, 280))
+        cv2.putText(penta_canvas, "CAM-1 FWD 0°", (15, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 240, 255), 1)
+        cv2.putText(penta_canvas, "CAM-5 NADIR 90°", (335, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 180), 1)
+        cv2.putText(penta_canvas, "CAM-2 REAR 180°", (655, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 210, 255), 1)
+        cv2.putText(penta_canvas, "CAM-3 PORT 270°", (15, 275), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 240, 180), 1)
+        cv2.putText(penta_canvas, "CAM-4 STBD 90°", (495, 275), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 240, 180), 1)
+        cv2.imwrite(LIVE_PENTAGRID_PATH, penta_canvas, [cv2.IMWRITE_JPEG_QUALITY, 85])
 
         # Write Camera Status Metadata with Radiometric Intelligence
         status_meta = {

@@ -125,8 +125,36 @@ class SystemOrchestrator(Node):
         ]
 
         # Simulation Entities for Computer Vision Observations:
-        # Includes 16 Distinct People (Men and Women), 7 Vehicles, 8 Wildlife Animals, and 5 Hazards/Objects.
+        # Includes Houses/Buildings, 16 Distinct People (Men and Women), 8 Vehicles, 8 Wildlife Animals, and 5 Hazards/Objects.
         self.sim_entities = [
+            # Military Base Buildings & Infrastructure (Zone Alpha)
+            {"id": "TRK-B01", "category": "building", "territory": "HOME",
+             "label": "Military Operations HQ", "pos": [-15.0, -25.0], "speed": 0.0, "route": [[-15.0, -25.0]]},
+            {"id": "TRK-B02", "category": "building", "territory": "HOME",
+             "label": "Barracks Alpha Facility", "pos": [-25.0, -45.0], "speed": 0.0, "route": [[-25.0, -45.0]]},
+            {"id": "TRK-B03", "category": "building", "territory": "HOME",
+             "label": "Barracks Bravo Facility", "pos": [-2.0, -45.0], "speed": 0.0, "route": [[-2.0, -45.0]]},
+            {"id": "TRK-B04", "category": "building", "territory": "HOME",
+             "label": "Aircraft Drone Flight Hangar", "pos": [25.0, -25.0], "speed": 0.0, "route": [[25.0, -25.0]]},
+            {"id": "TRK-B05", "category": "building", "territory": "HOME",
+             "label": "Base Motor Pool Workshop", "pos": [25.0, -48.0], "speed": 0.0, "route": [[25.0, -48.0]]},
+            {"id": "TRK-B06", "category": "building", "territory": "HOME",
+             "label": "Munitions Armory Bunker", "pos": [-36.0, -28.0], "speed": 0.0, "route": [[-36.0, -28.0]]},
+            {"id": "TRK-B07", "category": "building", "territory": "HOME",
+             "label": "Field Medical Center", "pos": [-36.0, -46.0], "speed": 0.0, "route": [[-36.0, -46.0]]},
+            {"id": "TRK-B08", "category": "building", "territory": "HOME",
+             "label": "Early-Warning Radar Tower", "pos": [38.0, -8.0], "speed": 0.0, "route": [[38.0, -8.0]]},
+            {"id": "TRK-B09", "category": "building", "territory": "HOME",
+             "label": "Perimeter Watchtower NW", "pos": [38.0, 20.0], "speed": 0.0, "route": [[38.0, 20.0]]},
+            {"id": "TRK-B10", "category": "building", "territory": "HOME",
+             "label": "North Checkpoint Guardhouse", "pos": [-4.2, 28.0], "speed": 0.0, "route": [[-4.2, 28.0]]},
+            {"id": "TRK-B11", "category": "building", "territory": "FOREIGN",
+             "label": "Civilian House / Cottage", "pos": [-60.0, 48.0], "speed": 0.0, "route": [[-60.0, 48.0]]},
+            {"id": "TRK-B12", "category": "building", "territory": "FOREIGN",
+             "label": "Northern Farmhouse & Barn", "pos": [35.0, 68.0], "speed": 0.0, "route": [[35.0, 68.0]]},
+            {"id": "TRK-V01", "category": "vehicle", "territory": "HOME",
+             "label": "Armored Vehicle (Stryker 8x8)", "pos": [-18.0, -35.0], "speed": 0.0, "route": [[-18.0, -35.0]]},
+
             # Zone Alpha: Home Sovereign Base HQ, Gate, Logistics, Comms, Hangar
             # 1. Man - Home Sovereign Patrol Guard (North Gate)
             {"id": "TRK-001", "category": "person", "gender": "man", "territory": "HOME",

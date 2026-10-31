@@ -229,8 +229,9 @@
             <span class="panel-title">LIVE GAZEBO SENSOR STREAMS</span>
             <div class="layout-toggles">
               <button class="btn-toggle active" data-layout="dual">DUAL CAM</button>
-              <button class="btn-toggle" data-layout="pentagrid">5-CAM ARRAY (360°+NADIR)</button>
               <button class="btn-toggle" data-layout="drone">FORWARD</button>
+              <button class="btn-toggle" data-layout="pentagrid">5-CAM ARRAY (360°+NADIR)</button>
+              <button class="btn-toggle" data-layout="panorama">360° PANORAMA</button>
               <button class="btn-toggle" data-layout="downward">DOWNWARD NADIR</button>
               <button class="btn-toggle" data-layout="rear">REAR AFT</button>
               <button class="btn-toggle" data-layout="left">PORT FLANK</button>
@@ -252,10 +253,20 @@
           <div class="cam-box" id="camBoxOverview">
             <div class="cam-banner">
               <span class="cam-name">GAZEBO WORLD OBSERVER (WATCHTOWER CAM)</span>
+              <div class="cam-zoom-toolbar" data-target="streamOverviewImg">
+                <button class="btn-zoom-step" data-action="out" title="Zoom Out (−)">−</button>
+                <span class="zoom-level-badge font-mono">1.0×</span>
+                <button class="btn-zoom-step" data-action="in" title="Zoom In (+)">+</button>
+                <button class="btn-zoom-preset active" data-zoom="1.0">1X</button>
+                <button class="btn-zoom-preset" data-zoom="2.0">2X</button>
+                <button class="btn-zoom-preset" data-zoom="4.0">4X</button>
+                <button class="btn-zoom-preset" data-zoom="8.0">8X</button>
+                <button class="btn-zoom-reset" title="Reset Zoom">RESET</button>
+              </div>
               <span class="cam-live-indicator">● LIVE OGRE2</span>
             </div>
             <div class="cam-img-wrap">
-              <img id="streamOverviewImg" src="/api/stream/overview" alt="Gazebo Overview Camera Stream">
+              <img id="streamOverviewImg" src="/api/stream/overview" data-stream-src="/api/stream/overview" alt="Gazebo Overview Camera Stream">
             </div>
           </div>
 
@@ -263,10 +274,20 @@
           <div class="cam-box" id="camBoxForward">
             <div class="cam-banner">
               <span class="cam-name">DRONE FORWARD OPTICAL (YOLO TRACKER)</span>
+              <div class="cam-zoom-toolbar" data-target="streamForwardImg">
+                <button class="btn-zoom-step" data-action="out" title="Zoom Out (−)">−</button>
+                <span class="zoom-level-badge font-mono">1.0×</span>
+                <button class="btn-zoom-step" data-action="in" title="Zoom In (+)">+</button>
+                <button class="btn-zoom-preset active" data-zoom="1.0">1X</button>
+                <button class="btn-zoom-preset" data-zoom="2.0">2X</button>
+                <button class="btn-zoom-preset" data-zoom="4.0">4X</button>
+                <button class="btn-zoom-preset" data-zoom="8.0">8X</button>
+                <button class="btn-zoom-reset" title="Reset Zoom">RESET</button>
+              </div>
               <span class="cam-live-indicator">● LIVE GIMBAL</span>
             </div>
             <div class="cam-img-wrap">
-              <img id="streamForwardImg" src="/api/stream/forward" alt="Drone Forward Camera Stream">
+              <img id="streamForwardImg" src="/api/stream/forward" data-stream-src="/api/stream/forward" alt="Drone Forward Camera Stream">
             </div>
           </div>
 
@@ -278,6 +299,16 @@
                 <span class="thermal-stat-chip font-mono" id="thermalCenterTemp">CTR: --.-°C</span>
                 <span class="thermal-stat-chip font-mono" id="thermalMaxTemp">MAX: --.-°C</span>
                 <button class="btn-isotherm active" id="btnToggleIsotherm" title="Toggle Isotherm Alert Highlight">ISO: 35°C</button>
+              </div>
+              <div class="cam-zoom-toolbar" data-target="streamThermalImg">
+                <button class="btn-zoom-step" data-action="out" title="Zoom Out (−)">−</button>
+                <span class="zoom-level-badge font-mono">1.0×</span>
+                <button class="btn-zoom-step" data-action="in" title="Zoom In (+)">+</button>
+                <button class="btn-zoom-preset active" data-zoom="1.0">1X</button>
+                <button class="btn-zoom-preset" data-zoom="2.0">2X</button>
+                <button class="btn-zoom-preset" data-zoom="4.0">4X</button>
+                <button class="btn-zoom-preset" data-zoom="8.0">8X</button>
+                <button class="btn-zoom-reset" title="Reset Zoom">RESET</button>
               </div>
               <span class="cam-live-indicator">● RADIOMETRIC</span>
             </div>
@@ -292,19 +323,29 @@
               <button class="btn-palette" data-palette="arctic">ARCTIC</button>
             </div>
             <div class="cam-img-wrap" id="thermalImgWrap">
-              <img id="streamThermalImg" src="/api/stream/thermal" alt="Thermal LWIR Stream">
+              <img id="streamThermalImg" src="" data-stream-src="/api/stream/thermal" alt="Thermal LWIR Stream">
               <div class="thermal-probe-badge hidden" id="thermalProbeBadge">--.-°C</div>
             </div>
           </div>
 
-          <!-- Viewport 4: Gen-3 Night-Vision Intensifier (Hidden in Dual, shown in Quad or Switch) -->
+          <!-- Viewport 4: Gen-3 Night-Vision Intensifier -->
           <div class="cam-box hidden" id="camBoxNvg">
             <div class="cam-banner">
               <span class="cam-name">GEN-3 NIGHT VISION (P43 PHOSPHOR)</span>
+              <div class="cam-zoom-toolbar" data-target="streamNvgImg">
+                <button class="btn-zoom-step" data-action="out" title="Zoom Out (−)">−</button>
+                <span class="zoom-level-badge font-mono">1.0×</span>
+                <button class="btn-zoom-step" data-action="in" title="Zoom In (+)">+</button>
+                <button class="btn-zoom-preset active" data-zoom="1.0">1X</button>
+                <button class="btn-zoom-preset" data-zoom="2.0">2X</button>
+                <button class="btn-zoom-preset" data-zoom="4.0">4X</button>
+                <button class="btn-zoom-preset" data-zoom="8.0">8X</button>
+                <button class="btn-zoom-reset" title="Reset Zoom">RESET</button>
+              </div>
               <span class="cam-live-indicator">● INTENSIFIER</span>
             </div>
             <div class="cam-img-wrap">
-              <img id="streamNvgImg" src="/api/stream/nvg" alt="Gen-3 Night Vision Stream">
+              <img id="streamNvgImg" src="" data-stream-src="/api/stream/nvg" alt="Gen-3 Night Vision Stream">
             </div>
           </div>
 
@@ -312,10 +353,20 @@
           <div class="cam-box hidden" id="camBoxDownward">
             <div class="cam-banner">
               <span class="cam-name">CAM-5 DOWNWARD NADIR (UNDER DRONE)</span>
+              <div class="cam-zoom-toolbar" data-target="streamDownwardImg">
+                <button class="btn-zoom-step" data-action="out" title="Zoom Out (−)">−</button>
+                <span class="zoom-level-badge font-mono">1.0×</span>
+                <button class="btn-zoom-step" data-action="in" title="Zoom In (+)">+</button>
+                <button class="btn-zoom-preset active" data-zoom="1.0">1X</button>
+                <button class="btn-zoom-preset" data-zoom="2.0">2X</button>
+                <button class="btn-zoom-preset" data-zoom="4.0">4X</button>
+                <button class="btn-zoom-preset" data-zoom="8.0">8X</button>
+                <button class="btn-zoom-reset" title="Reset Zoom">RESET</button>
+              </div>
               <span class="cam-live-indicator">● 90° DOWN</span>
             </div>
             <div class="cam-img-wrap">
-              <img id="streamDownwardImg" src="/api/stream/downward" alt="Downward Nadir Camera Stream">
+              <img id="streamDownwardImg" src="" data-stream-src="/api/stream/downward" alt="Downward Nadir Camera Stream">
             </div>
           </div>
 
@@ -323,10 +374,20 @@
           <div class="cam-box hidden" id="camBoxRear">
             <div class="cam-banner">
               <span class="cam-name">CAM-2 REAR AFT (180° REVERSE)</span>
+              <div class="cam-zoom-toolbar" data-target="streamRearImg">
+                <button class="btn-zoom-step" data-action="out" title="Zoom Out (−)">−</button>
+                <span class="zoom-level-badge font-mono">1.0×</span>
+                <button class="btn-zoom-step" data-action="in" title="Zoom In (+)">+</button>
+                <button class="btn-zoom-preset active" data-zoom="1.0">1X</button>
+                <button class="btn-zoom-preset" data-zoom="2.0">2X</button>
+                <button class="btn-zoom-preset" data-zoom="4.0">4X</button>
+                <button class="btn-zoom-preset" data-zoom="8.0">8X</button>
+                <button class="btn-zoom-reset" title="Reset Zoom">RESET</button>
+              </div>
               <span class="cam-live-indicator">● 180° AFT</span>
             </div>
             <div class="cam-img-wrap">
-              <img id="streamRearImg" src="/api/stream/rear" alt="Rear Aft Camera Stream">
+              <img id="streamRearImg" src="" data-stream-src="/api/stream/rear" alt="Rear Aft Camera Stream">
             </div>
           </div>
 
@@ -334,10 +395,20 @@
           <div class="cam-box hidden" id="camBoxLeft">
             <div class="cam-banner">
               <span class="cam-name">CAM-3 PORT FLANK (270° LEFT)</span>
+              <div class="cam-zoom-toolbar" data-target="streamLeftImg">
+                <button class="btn-zoom-step" data-action="out" title="Zoom Out (−)">−</button>
+                <span class="zoom-level-badge font-mono">1.0×</span>
+                <button class="btn-zoom-step" data-action="in" title="Zoom In (+)">+</button>
+                <button class="btn-zoom-preset active" data-zoom="1.0">1X</button>
+                <button class="btn-zoom-preset" data-zoom="2.0">2X</button>
+                <button class="btn-zoom-preset" data-zoom="4.0">4X</button>
+                <button class="btn-zoom-preset" data-zoom="8.0">8X</button>
+                <button class="btn-zoom-reset" title="Reset Zoom">RESET</button>
+              </div>
               <span class="cam-live-indicator">● 270° PORT</span>
             </div>
             <div class="cam-img-wrap">
-              <img id="streamLeftImg" src="/api/stream/left" alt="Port Left Camera Stream">
+              <img id="streamLeftImg" src="" data-stream-src="/api/stream/left" alt="Port Left Camera Stream">
             </div>
           </div>
 
@@ -345,10 +416,41 @@
           <div class="cam-box hidden" id="camBoxRight">
             <div class="cam-banner">
               <span class="cam-name">CAM-4 STARBOARD FLANK (90° RIGHT)</span>
+              <div class="cam-zoom-toolbar" data-target="streamRightImg">
+                <button class="btn-zoom-step" data-action="out" title="Zoom Out (−)">−</button>
+                <span class="zoom-level-badge font-mono">1.0×</span>
+                <button class="btn-zoom-step" data-action="in" title="Zoom In (+)">+</button>
+                <button class="btn-zoom-preset active" data-zoom="1.0">1X</button>
+                <button class="btn-zoom-preset" data-zoom="2.0">2X</button>
+                <button class="btn-zoom-preset" data-zoom="4.0">4X</button>
+                <button class="btn-zoom-preset" data-zoom="8.0">8X</button>
+                <button class="btn-zoom-reset" title="Reset Zoom">RESET</button>
+              </div>
               <span class="cam-live-indicator">● 90° STBD</span>
             </div>
             <div class="cam-img-wrap">
-              <img id="streamRightImg" src="/api/stream/right" alt="Starboard Right Camera Stream">
+              <img id="streamRightImg" src="" data-stream-src="/api/stream/right" alt="Starboard Right Camera Stream">
+            </div>
+          </div>
+
+          <!-- Viewport 9: Consolidated 5-Camera 360+Nadir Panoramic Stream -->
+          <div class="cam-box hidden" id="camBoxPentagrid">
+            <div class="cam-banner">
+              <span class="cam-name">CONSOLIDATED 360° + NADIR 5-CAMERA PANORAMA</span>
+              <div class="cam-zoom-toolbar" data-target="streamPentagridImg">
+                <button class="btn-zoom-step" data-action="out" title="Zoom Out (−)">−</button>
+                <span class="zoom-level-badge font-mono">1.0×</span>
+                <button class="btn-zoom-step" data-action="in" title="Zoom In (+)">+</button>
+                <button class="btn-zoom-preset active" data-zoom="1.0">1X</button>
+                <button class="btn-zoom-preset" data-zoom="2.0">2X</button>
+                <button class="btn-zoom-preset" data-zoom="4.0">4X</button>
+                <button class="btn-zoom-preset" data-zoom="8.0">8X</button>
+                <button class="btn-zoom-reset" title="Reset Zoom">RESET</button>
+              </div>
+              <span class="cam-live-indicator">● 5-IN-1 PANORAMIC</span>
+            </div>
+            <div class="cam-img-wrap">
+              <img id="streamPentagridImg" src="" data-stream-src="/api/stream/pentagrid" alt="Consolidated 5-Camera Panoramic Stream">
             </div>
           </div>
         </div>

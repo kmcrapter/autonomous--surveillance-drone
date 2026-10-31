@@ -324,6 +324,127 @@
       </link>
     </model>
 
+    <!-- Barracks Bravo & Accommodation Wing -->
+    <model name="barracks_bravo_building">
+      <static>true</static>
+      <pose>-2 -45 2.5 0 0 0</pose>
+      <link name="barracks_link">
+        <collision name="col"><geometry><box><size>20 10 5</size></box></geometry></collision>
+        <visual name="walls">
+          <geometry><box><size>20 10 5</size></box></geometry>
+          <material><ambient>0.3 0.35 0.3 1</ambient><diffuse>0.38 0.44 0.38 1</diffuse></material>
+        </visual>
+        <visual name="roof">
+          <pose>0 0 2.8 0 0 0</pose>
+          <geometry><box><size>20.6 10.6 0.6</size></box></geometry>
+          <material><ambient>0.2 0.22 0.2 1</ambient><diffuse>0.25 0.27 0.25 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Base Motor Pool & Vehicle Maintenance Depot -->
+    <model name="base_motor_pool">
+      <static>true</static>
+      <pose>25 -48 2.2 0 0 0</pose>
+      <link name="pool_link">
+        <collision name="col"><geometry><box><size>24 12 4.4</size></box></geometry></collision>
+        <visual name="shed_roof">
+          <pose>0 0 2.1 0 0 0</pose>
+          <geometry><box><size>24.4 12.4 0.4</size></box></geometry>
+          <material><ambient>0.25 0.28 0.32 1</ambient><diffuse>0.35 0.38 0.42 1</diffuse></material>
+        </visual>
+        <visual name="pillar_1"><pose>11 5 0 0 0 0</pose><geometry><cylinder><radius>0.25</radius><length>4.2</length></cylinder></geometry><material><ambient>0.7 0.7 0.7 1</ambient></material></visual>
+        <visual name="pillar_2"><pose>-11 5 0 0 0 0</pose><geometry><cylinder><radius>0.25</radius><length>4.2</length></cylinder></geometry><material><ambient>0.7 0.7 0.7 1</ambient></material></visual>
+        <visual name="pillar_3"><pose>11 -5 0 0 0 0</pose><geometry><cylinder><radius>0.25</radius><length>4.2</length></cylinder></geometry><material><ambient>0.7 0.7 0.7 1</ambient></material></visual>
+        <visual name="pillar_4"><pose>-11 -5 0 0 0 0</pose><geometry><cylinder><radius>0.25</radius><length>4.2</length></cylinder></geometry><material><ambient>0.7 0.7 0.7 1</ambient></material></visual>
+      </link>
+    </model>
+
+    <!-- Munitions Armory & Hardened Bunker -->
+    <model name="munitions_armory_bunker">
+      <static>true</static>
+      <pose>-36 -28 2.0 0 0 0</pose>
+      <link name="bunker_link">
+        <collision name="col"><geometry><box><size>14 10 4.0</size></box></geometry></collision>
+        <visual name="reinforced_walls">
+          <geometry><box><size>14 10 4.0</size></box></geometry>
+          <material><ambient>0.22 0.24 0.26 1</ambient><diffuse>0.30 0.32 0.35 1</diffuse></material>
+        </visual>
+        <visual name="blast_door">
+          <pose>0 5.05 -0.2 0 0 0</pose>
+          <geometry><box><size>3.5 0.2 3.0</size></box></geometry>
+          <material><ambient>0.8 0.6 0.1 1</ambient><diffuse>0.9 0.7 0.1 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Military Field Medical Station -->
+    <model name="field_medical_station">
+      <static>true</static>
+      <pose>-36 -46 2.4 0 0 0</pose>
+      <link name="med_link">
+        <collision name="col"><geometry><box><size>14 10 4.8</size></box></geometry></collision>
+        <visual name="walls">
+          <geometry><box><size>14 10 4.8</size></box></geometry>
+          <material><ambient>0.75 0.78 0.80 1</ambient><diffuse>0.85 0.88 0.90 1</diffuse></material>
+        </visual>
+        <visual name="red_cross_h"><pose>0 0 2.45 0 0 0</pose><geometry><box><size>4.0 1.2 0.05</size></box></geometry><material><ambient>0.9 0.1 0.1 1</ambient><diffuse>1 0.1 0.1 1</diffuse></material></visual>
+        <visual name="red_cross_v"><pose>0 0 2.45 0 0 0</pose><geometry><box><size>1.2 4.0 0.05</size></box></geometry><material><ambient>0.9 0.1 0.1 1</ambient><diffuse>1 0.1 0.1 1</diffuse></material></visual>
+      </link>
+    </model>
+
+    <!-- Early-Warning Radar Station (Geodesic Dome on Elevated Pylon) -->
+    <model name="long_range_radar_station">
+      <static>true</static>
+      <pose>38 -8 6.5 0 0 0</pose>
+      <link name="radar_link">
+        <collision name="col"><geometry><cylinder><radius>3.5</radius><length>13.0</length></cylinder></geometry></collision>
+        <visual name="tower_pedestal">
+          <geometry><cylinder><radius>1.8</radius><length>10.0</length></cylinder></geometry>
+          <material><ambient>0.3 0.35 0.4 1</ambient><diffuse>0.4 0.45 0.5 1</diffuse></material>
+        </visual>
+        <visual name="geodesic_radome">
+          <pose>0 0 6.2 0 0 0</pose>
+          <geometry><sphere><radius>3.2</radius></sphere></geometry>
+          <material><ambient>0.9 0.92 0.95 1</ambient><diffuse>0.95 0.97 1.0 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Fuel Storage & Refueling Facility -->
+    <model name="fuel_storage_depot">
+      <static>true</static>
+      <pose>10 -50 2.5 0 0 0</pose>
+      <link name="fuel_link">
+        <visual name="tank_1"><pose>-3 0 0 0 0 0</pose><geometry><cylinder><radius>2.2</radius><length>5.0</length></cylinder></geometry><material><ambient>0.85 0.85 0.85 1</ambient><diffuse>0.9 0.9 0.9 1</diffuse></material></visual>
+        <visual name="tank_2"><pose>3 0 0 0 0 0</pose><geometry><cylinder><radius>2.2</radius><length>5.0</length></cylinder></geometry><material><ambient>0.85 0.85 0.85 1</ambient><diffuse>0.9 0.9 0.9 1</diffuse></material></visual>
+        <visual name="hazard_band"><pose>0 0 0 0 0 0</pose><geometry><box><size>11 0.2 0.4</size></box></geometry><material><ambient>0.9 0.7 0.1 1</ambient><diffuse>0.95 0.8 0.1 1</diffuse></material></visual>
+      </link>
+    </model>
+
+    <!-- Armored Personnel Carrier (Stryker 8x8) -->
+    <model name="armored_stryker_apc">
+      <static>true</static>
+      <pose>-18 -35 1.4 0 0 0.4</pose>
+      <link name="apc_link">
+        <collision name="col"><geometry><box><size>6.8 2.8 2.4</size></box></geometry></collision>
+        <visual name="hull"><geometry><box><size>6.8 2.8 1.8</size></box></geometry><material><ambient>0.2 0.28 0.2 1</ambient><diffuse>0.28 0.38 0.28 1</diffuse></material></visual>
+        <visual name="turret"><pose>0.8 0 1.2 0 0 0</pose><geometry><cylinder><radius>0.9</radius><length>0.8</length></cylinder></geometry><material><ambient>0.18 0.24 0.18 1</ambient></material></visual>
+        <visual name="cannon"><pose>2.2 0 1.3 0 1.5708 0</pose><geometry><cylinder><radius>0.08</radius><length>2.4</length></cylinder></geometry><material><ambient>0.1 0.1 0.1 1</ambient></material></visual>
+      </link>
+    </model>
+
+    <!-- Main North Entry Checkpoint Guardhouse -->
+    <model name="north_checkpoint_guardhouse">
+      <static>true</static>
+      <pose>-4.2 28 1.8 0 0 0</pose>
+      <link name="gh_link">
+        <collision name="col"><geometry><box><size>4.5 3.5 3.6</size></box></geometry></collision>
+        <visual name="building"><geometry><box><size>4.5 3.5 3.6</size></box></geometry><material><ambient>0.3 0.35 0.32 1</ambient><diffuse>0.4 0.45 0.42 1</diffuse></material></visual>
+        <visual name="observation_window"><pose>0 1.8 0.3 0 0 0</pose><geometry><box><size>3.8 0.1 1.4</size></box></geometry><material><ambient>0.1 0.3 0.4 0.8</ambient></material></visual>
+      </link>
+    </model>
+
     <!-- Dedicated Drone Landing Pad & Autonomous Charging Station (HOME STATION) -->
     <model name="drone_landing_pad_home">
       <static>true</static>

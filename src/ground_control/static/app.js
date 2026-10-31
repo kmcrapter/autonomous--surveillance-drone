@@ -610,18 +610,30 @@ document.addEventListener('DOMContentLoaded', () => {
   const boxRear = document.getElementById('camBoxRear');
   const boxLeft = document.getElementById('camBoxLeft');
   const boxRight = document.getElementById('camBoxRight');
+  const boxPentagrid = document.getElementById('camBoxPentagrid');
 
-  const allCamBoxes = [boxOverview, boxForward, boxThermal, boxNvg, boxDownward, boxRear, boxLeft, boxRight];
+  const allCamBoxes = [boxOverview, boxForward, boxThermal, boxNvg, boxDownward, boxRear, boxLeft, boxRight, boxPentagrid];
 
   function showCamBoxes(activeBoxes, viewClass = 'single-view') {
     if (!cameraViewports) return;
     cameraViewports.className = `camera-viewports ${viewClass}`;
     allCamBoxes.forEach(b => {
       if (!b) return;
+      const img = b.querySelector('img');
       if (activeBoxes.includes(b)) {
         b.classList.remove('hidden');
+        if (img) {
+          const streamSrc = img.dataset.streamSrc || img.getAttribute('data-stream-src');
+          if (streamSrc && (!img.src || img.src === window.location.href || img.src.endsWith('/'))) {
+            img.src = streamSrc;
+          }
+        }
       } else {
         b.classList.add('hidden');
+        if (img) {
+          // Sever perpetual MJPEG HTTP stream to avoid browser connection pool exhaustion
+          img.src = "";
+        }
       }
     });
     setTimeout(() => map && map.invalidateSize(), 150);
@@ -639,6 +651,10 @@ document.addEventListener('DOMContentLoaded', () => {
         showCamBoxes([boxOverview], 'single-view');
       } else if (layout === 'drone') {
         showCamBoxes([boxForward], 'single-view');
+      } else if (layout === 'panorama') {
+        showCamBoxes([boxPentagrid], 'panorama-view');
+      } else if (layout === 'pentagrid') {
+        showCamBoxes([boxPentagrid], 'panorama-view');
       } else if (layout === 'downward') {
         showCamBoxes([boxDownward], 'single-view');
       } else if (layout === 'rear') {
@@ -653,11 +669,156 @@ document.addEventListener('DOMContentLoaded', () => {
         showCamBoxes([boxNvg], 'single-view');
       } else if (layout === 'quad') {
         showCamBoxes([boxOverview, boxForward, boxThermal, boxNvg], 'quad-view');
-      } else if (layout === 'pentagrid') {
-        showCamBoxes([boxForward, boxRear, boxLeft, boxRight, boxDownward], 'pentagrid-view');
       }
     });
   });
+
+  // Initialize active sockets for initial dual view
+  showCamBoxes([boxOverview, boxForward], 'dual-view');
+
+  // =========================================================================
+  // 3b. Interactive Tactical Camera Zoom & Pan Engine
+  // =========================================================================
+  const cameraZoomStates = {};
+
+  function initCameraZoomEngine() {
+    const toolbars = document.querySelectorAll('.cam-zoom-toolbar');
+    toolbars.forEach(toolbar => {
+      const targetId = toolbar.dataset.target;
+      if (!targetId) return;
+      const targetImg = document.getElementById(targetId);
+      if (!targetImg) return;
+      const imgWrap = targetImg.closest('.cam-img-wrap');
+      if (!imgWrap) return;
+
+      const state = {
+        scale: 1.0,
+        panX: 0,
+        panY: 0,
+        isDragging: false,
+        startX: 0,
+        startY: 0
+      };
+      cameraZoomStates[targetId] = state;
+
+      const badge = toolbar.querySelector('.zoom-level-badge');
+      const presetBtns = toolbar.querySelectorAll('.btn-zoom-preset');
+
+      function updateTransform(withTransition = true) {
+        targetImg.style.transition = withTransition ? 'transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1)' : 'none';
+        targetImg.style.transform = `scale(${state.scale}) translate(${state.panX / state.scale}px, ${state.panY / state.scale}px)`;
+        if (badge) badge.textContent = `${state.scale.toFixed(1)}×`;
+
+        presetBtns.forEach(btn => {
+          const z = parseFloat(btn.dataset.zoom);
+          if (Math.abs(z - state.scale) < 0.05) {
+            btn.classList.add('active');
+          } else {
+            btn.classList.remove('active');
+          }
+        });
+
+        if (state.scale > 1.0) {
+          imgWrap.style.cursor = state.isDragging ? 'grabbing' : 'grab';
+        } else {
+          imgWrap.style.cursor = 'default';
+        }
+      }
+
+      function setZoom(newScale, withTransition = true) {
+        state.scale = Math.max(1.0, Math.min(8.0, Math.round(newScale * 10) / 10));
+        if (state.scale <= 1.0) {
+          state.panX = 0;
+          state.panY = 0;
+        } else {
+          const maxPan = 280 * (state.scale - 1);
+          state.panX = Math.max(-maxPan, Math.min(maxPan, state.panX));
+          state.panY = Math.max(-maxPan, Math.min(maxPan, state.panY));
+        }
+        updateTransform(withTransition);
+      }
+
+      // Step Buttons (− and +)
+      const stepBtns = toolbar.querySelectorAll('.btn-zoom-step');
+      stepBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const action = btn.dataset.action;
+          const delta = state.scale >= 4.0 ? 2.0 : (state.scale >= 2.0 ? 1.0 : 0.5);
+          setZoom(action === 'in' ? state.scale + delta : state.scale - delta);
+          playTacticalTone(720, 0.03);
+        });
+      });
+
+      // Preset Buttons (1X, 2X, 4X, 8X)
+      presetBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const z = parseFloat(btn.dataset.zoom);
+          setZoom(z);
+          playTacticalTone(840, 0.03);
+        });
+      });
+
+      // Reset Button
+      const resetBtn = toolbar.querySelector('.btn-zoom-reset');
+      if (resetBtn) {
+        resetBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          state.panX = 0;
+          state.panY = 0;
+          setZoom(1.0);
+          playTacticalTone(520, 0.04);
+        });
+      }
+
+      // Mouse Wheel Zoom
+      imgWrap.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const delta = e.deltaY < 0 ? 0.3 : -0.3;
+        setZoom(state.scale + delta);
+      }, { passive: false });
+
+      // Click & Drag to Pan (when zoomed)
+      imgWrap.addEventListener('mousedown', (e) => {
+        if (state.scale <= 1.0) return;
+        state.isDragging = true;
+        state.startX = e.clientX - state.panX;
+        state.startY = e.clientY - state.panY;
+        updateTransform(false);
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (!state.isDragging) return;
+        state.panX = e.clientX - state.startX;
+        state.panY = e.clientY - state.startY;
+        const maxPan = 320 * (state.scale - 1);
+        state.panX = Math.max(-maxPan, Math.min(maxPan, state.panX));
+        state.panY = Math.max(-maxPan, Math.min(maxPan, state.panY));
+        updateTransform(false);
+      });
+
+      window.addEventListener('mouseup', () => {
+        if (state.isDragging) {
+          state.isDragging = false;
+          updateTransform(true);
+        }
+      });
+
+      // Double-click toggle (1X <-> 2X)
+      imgWrap.addEventListener('dblclick', () => {
+        if (state.scale > 1.0) {
+          state.panX = 0;
+          state.panY = 0;
+          setZoom(1.0);
+        } else {
+          setZoom(2.0);
+        }
+      });
+    });
+  }
+
+  initCameraZoomEngine();
 
   // 3a. FLIR LWIR Radiometric Thermal Controls & Palettes
   let latestThermalCenterTemp = 36.8;
@@ -1115,7 +1276,15 @@ document.addEventListener('DOMContentLoaded', () => {
         })
       });
       const data = await res.json();
-      alert(`Simulated Voice Advisory Dispatched:\n"Identity verification required. Please remain in the designated safe area and contact authorized personnel."`);
+      
+      // Real-time audio voice synthesis
+      if ('speechSynthesis' in window) {
+        const utter = new SpeechSynthesisUtterance("Identity verification required. Please remain in the designated safe area and contact authorized personnel.");
+        utter.rate = 0.95;
+        utter.pitch = 1.0;
+        window.speechSynthesis.speak(utter);
+      }
+      playTacticalTone(580, 0.08);
       loadPersonnelData();
     } catch (err) {
       console.error("Voice announce error:", err);
@@ -1124,6 +1293,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.initiateVisualVerification = async function(targetId) {
     try {
+      playTacticalTone(880, 0.05);
       await fetch('/api/personnel/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1140,6 +1310,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.reviewPersonnel = async function(entityId, status) {
     try {
+      playTacticalTone(640, 0.04);
       await fetch('/api/personnel/review', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1226,6 +1397,11 @@ document.addEventListener('DOMContentLoaded', () => {
               ? '<span style="color:#ffd000;font-weight:700;">⚠️ NO ID CARD</span>'
               : `${e.tag_type || 'N/A'} (${e.tag_id || 'NONE'})`;
 
+            const faceStatus = e.face_verification_status || (state === 'AUTHENTICATED' || state === 'VISUAL_VERIFIED' ? 'VERIFIED' : 'UNVERIFIED');
+            const faceMatchPct = (faceStatus === 'MATCH' || faceStatus === 'VERIFIED') ? '94%' : (faceStatus === 'NO_MATCH' ? '14%' : '48%');
+            const faceColorClass = (faceStatus === 'MATCH' || faceStatus === 'VERIFIED') ? 'text-emerald' : (faceStatus === 'NO_MATCH' ? 'text-crimson' : 'text-amber');
+            const faceBarColor = (faceStatus === 'MATCH' || faceStatus === 'VERIFIED') ? '#00e599' : (faceStatus === 'NO_MATCH' ? '#ff3b5c' : '#ffd000');
+
             return `
               <div class="personnel-card ${stateClass}">
                 <div class="personnel-card-header">
@@ -1234,6 +1410,33 @@ document.addEventListener('DOMContentLoaded', () => {
                   </div>
                   <span class="personnel-state-badge ${badgeClass}">${state.replace('_', ' ')}</span>
                 </div>
+
+                <!-- Biometric Facial Recognition HUD Component -->
+                <div class="bio-hud-box">
+                  <div class="bio-scan-avatar">
+                    <svg class="bio-silhouette" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <div class="bio-reticle"></div>
+                    <div class="bio-scan-laser"></div>
+                  </div>
+                  <div class="bio-hud-meta">
+                    <div class="bio-hud-row">
+                      <span class="bio-label">FACIAL BIOMETRICS</span>
+                      <span class="bio-val ${faceColorClass}">${faceStatus}</span>
+                    </div>
+                    <div class="bio-confidence-track">
+                      <div class="bio-confidence-bar" style="width: ${faceMatchPct}; background: ${faceBarColor};"></div>
+                    </div>
+                    <div class="bio-hud-sub">
+                      <span>MATCH: <b class="${faceColorClass}">${faceMatchPct}</b></span>
+                      <span>LIVENESS: <b style="color:#00e599">PASSED</b></span>
+                      <span>QUALITY: <b>92%</b></span>
+                    </div>
+                  </div>
+                </div>
+
                 <div class="personnel-details-grid">
                   <div class="p-item">
                     <span class="p-label">ELECTRONIC TAG</span>
@@ -1244,16 +1447,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span class="p-val">${e.assigned_unit || 'UNASSIGNED'}</span>
                   </div>
                   <div class="p-item">
-                    <span class="p-label">FACE STATUS</span>
-                    <span class="p-val">${e.face_verification_status || 'UNVERIFIED'}</span>
-                  </div>
-                  <div class="p-item">
-                    <span class="p-label">CONFIDENCE</span>
+                    <span class="p-label">OVERALL CONF</span>
                     <span class="p-val">${confPct}%</span>
                   </div>
                   <div class="p-item">
                     <span class="p-label">COORDINATES</span>
                     <span class="p-val">(${wpos.x.toFixed(1)}, ${wpos.y.toFixed(1)})</span>
+                  </div>
+                  <div class="p-item">
+                    <span class="p-label">TAG STATUS</span>
+                    <span class="p-val" style="color:${e.has_id_card === false ? '#ffd000' : '#00e599'}">${e.auth_status || 'UNKNOWN'}</span>
                   </div>
                   <div class="p-item">
                     <span class="p-label">OPERATOR REVIEW</span>

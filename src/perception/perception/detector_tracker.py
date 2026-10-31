@@ -37,50 +37,80 @@ class TrackedObject:
 class ObjectDetectorTracker:
     """High-accuracy multi-class object detection and persistent tracking."""
 
-    # Ground-truth entity catalog across surveillance theater (37 diverse targets)
+    # Ground-truth entity catalog across surveillance theater (Houses, Vehicles, Walking People, Wildlife, Hazards)
     KNOWN_ACTORS = [
-        # Zone Alpha: Base HQ, North Gate, Logistics, Comms, Hangar
-        {"label": "Man (Home Patrol Guard)", "category": "person", "gender": "man", "pos": (6.0, 20.0), "territory": "HOME", "size": (0.65, 1.80), "temp_c": 37.1},
-        {"label": "Woman (Logistics Officer)", "category": "person", "gender": "woman", "pos": (-10.0, -25.0), "territory": "HOME", "size": (0.60, 1.72), "temp_c": 36.9},
-        {"label": "Woman (Border Officer)", "category": "person", "gender": "woman", "pos": (-15.0, 28.0), "territory": "HOME", "size": (0.60, 1.74), "temp_c": 37.0},
-        {"label": "Man (Base Commander Vance)", "category": "person", "gender": "man", "pos": (0.0, -35.0), "territory": "HOME", "size": (0.68, 1.82), "temp_c": 37.1},
-        {"label": "Man (Hangar Mechanic Miller)", "category": "person", "gender": "man", "pos": (-20.0, -18.0), "territory": "HOME", "size": (0.65, 1.78), "temp_c": 37.0},
-        {"label": "Woman (Comms Specialist)", "category": "person", "gender": "woman", "pos": (15.0, -20.0), "territory": "HOME", "size": (0.60, 1.71), "temp_c": 36.8},
-        {"label": "Man (Main Gate Guard)", "category": "person", "gender": "man", "pos": (0.0, 27.5), "territory": "HOME", "size": (0.65, 1.80), "temp_c": 37.2},
-        {"label": "Patrol SUV (Border Roadway)", "category": "vehicle", "pos": (0.0, 35.0), "territory": "HOME", "size": (2.20, 1.85), "temp_c": 89.5},
-        {"label": "Military Transport Truck 6x6", "category": "vehicle", "pos": (-25.0, -35.0), "territory": "HOME", "size": (2.80, 2.90), "temp_c": 92.0},
-        {"label": "HQ Command SUV (Parked)", "category": "vehicle", "pos": (12.0, -32.0), "territory": "HOME", "size": (2.20, 1.85), "temp_c": 84.0},
+        # --- Military Base Buildings & Infrastructure (Zone Alpha) ---
+        {"label": "Military Operations HQ", "category": "building", "pos": (-15.0, -25.0), "territory": "HOME", "size": (18.0, 7.0), "temp_c": 22.0},
+        {"label": "Barracks Alpha Facility", "category": "building", "pos": (-25.0, -45.0), "territory": "HOME", "size": (22.0, 5.0), "temp_c": 21.0},
+        {"label": "Barracks Bravo Facility", "category": "building", "pos": (-2.0, -45.0), "territory": "HOME", "size": (20.0, 5.0), "temp_c": 21.0},
+        {"label": "Aircraft Drone Flight Hangar", "category": "building", "pos": (25.0, -25.0), "territory": "HOME", "size": (24.0, 8.0), "temp_c": 20.0},
+        {"label": "Base Motor Pool Workshop", "category": "building", "pos": (25.0, -48.0), "territory": "HOME", "size": (24.0, 4.4), "temp_c": 21.5},
+        {"label": "Munitions Armory Bunker", "category": "building", "pos": (-36.0, -28.0), "territory": "HOME", "size": (14.0, 4.0), "temp_c": 17.5},
+        {"label": "Field Medical Center", "category": "building", "pos": (-36.0, -46.0), "territory": "HOME", "size": (14.0, 4.8), "temp_c": 22.0},
+        {"label": "Early-Warning Radar Tower", "category": "building", "pos": (38.0, -8.0), "territory": "HOME", "size": (8.0, 13.0), "temp_c": 24.0},
+        {"label": "Perimeter Watchtower NW", "category": "building", "pos": (38.0, 20.0), "territory": "HOME", "size": (4.5, 12.0), "temp_c": 19.0},
+        {"label": "North Checkpoint Guardhouse", "category": "building", "pos": (-4.2, 28.0), "territory": "HOME", "size": (4.5, 3.6), "temp_c": 21.0},
+        {"label": "Main Security Entry Gate", "category": "building", "pos": (0.0, 28.0), "territory": "HOME", "size": (9.0, 3.0), "temp_c": 18.0},
+        {"label": "Civilian House / Cottage", "category": "building", "pos": (-60.0, 48.0), "territory": "FOREIGN", "size": (9.0, 4.5), "temp_c": 22.5},
+        {"label": "Foreign Border Post Station", "category": "building", "pos": (0.0, 36.0), "territory": "FOREIGN", "size": (8.0, 4.0), "temp_c": 20.0},
+        {"label": "Northern Farmhouse & Barn", "category": "building", "pos": (35.0, 68.0), "territory": "FOREIGN", "size": (15.0, 6.0), "temp_c": 21.0},
 
-        # Zone Delta: Eastern Outpost Ridge, Bluff, Watchtower, Bridge
-        {"label": "Man (Outpost Ridge Sentry)", "category": "person", "gender": "man", "pos": (65.0, -15.0), "territory": "HOME", "size": (0.65, 1.82), "temp_c": 37.2},
+        # --- Walking Military Personnel (Zone Alpha & Delta) ---
+        {"label": "Man (Home Patrol Guard)", "category": "person", "gender": "man", "pos": (6.0, 20.0), "territory": "HOME", "size": (0.65, 1.80), "temp_c": 37.1,
+         "route": [[6.0, 20.0], [14.0, 22.0], [20.0, 20.0], [6.0, 20.0]], "speed": 1.1},
+        {"label": "Woman (Logistics Officer)", "category": "person", "gender": "woman", "pos": (-10.0, -25.0), "territory": "HOME", "size": (0.60, 1.72), "temp_c": 36.9,
+         "route": [[-10.0, -25.0], [-16.0, -22.0], [-8.0, -28.0], [-10.0, -25.0]], "speed": 0.9},
+        {"label": "Woman (Border Officer)", "category": "person", "gender": "woman", "pos": (-15.0, 28.0), "territory": "HOME", "size": (0.60, 1.74), "temp_c": 37.0,
+         "route": [[-15.0, 28.0], [-22.0, 27.0], [-10.0, 26.0], [-15.0, 28.0]], "speed": 1.0},
+        {"label": "Man (Base Commander Vance)", "category": "person", "gender": "man", "pos": (0.0, -35.0), "territory": "HOME", "size": (0.68, 1.82), "temp_c": 37.1,
+         "route": [[0.0, -35.0], [4.0, -32.0], [-4.0, -33.0], [0.0, -35.0]], "speed": 0.6},
+        {"label": "Man (Hangar Mechanic Miller)", "category": "person", "gender": "man", "pos": (-20.0, -18.0), "territory": "HOME", "size": (0.65, 1.78), "temp_c": 37.0,
+         "route": [[-20.0, -18.0], [-24.0, -16.0], [-18.0, -20.0], [-20.0, -18.0]], "speed": 0.8},
+        {"label": "Woman (Comms Specialist)", "category": "person", "gender": "woman", "pos": (15.0, -20.0), "territory": "HOME", "size": (0.60, 1.71), "temp_c": 36.8,
+         "route": [[15.0, -20.0], [18.0, -18.0], [12.0, -22.0], [15.0, -20.0]], "speed": 0.7},
+        {"label": "Man (Main Gate Guard)", "category": "person", "gender": "man", "pos": (0.0, 27.5), "territory": "HOME", "size": (0.65, 1.80), "temp_c": 37.2,
+         "route": [[0.0, 27.5], [3.0, 28.0], [-3.0, 28.0], [0.0, 27.5]], "speed": 0.8},
+
+        # --- Military & Civilian Vehicles ---
+        {"label": "Armored Vehicle (Stryker 8x8)", "category": "vehicle", "pos": (-18.0, -35.0), "territory": "HOME", "size": (6.80, 2.80), "temp_c": 86.0},
+        {"label": "Military Transport Truck 6x6", "category": "vehicle", "pos": (-25.0, -35.0), "territory": "HOME", "size": (2.80, 2.90), "temp_c": 92.0},
+        {"label": "Secondary Logistics Truck", "category": "vehicle", "pos": (25.0, -42.0), "territory": "HOME", "size": (5.20, 2.20), "temp_c": 88.0},
+        {"label": "HQ Command Patrol SUV", "category": "vehicle", "pos": (12.0, -32.0), "territory": "HOME", "size": (2.20, 1.85), "temp_c": 84.0},
+        {"label": "Patrol SUV (Border Roadway)", "category": "vehicle", "pos": (0.0, 35.0), "territory": "HOME", "size": (2.20, 1.85), "temp_c": 89.5,
+         "route": [[0.0, 18.0], [0.0, 35.0], [0.0, 50.0], [0.0, 18.0]], "speed": 3.5},
+        {"label": "Tactical Border ATV Quad", "category": "vehicle", "pos": (22.0, 36.0), "territory": "HOME", "size": (1.40, 1.20), "temp_c": 78.0},
+        {"label": "Foreign 4x4 Off-Roader", "category": "vehicle", "pos": (-15.0, 45.0), "territory": "FOREIGN", "size": (2.30, 1.90), "temp_c": 91.0},
+        {"label": "Outpost Utility Rover", "category": "vehicle", "pos": (60.0, -10.0), "territory": "HOME", "size": (1.80, 1.50), "temp_c": 75.0},
+
+        # --- Walking Sentries & Civilians (Zone Delta, Bravo & Charlie) ---
+        {"label": "Man (Outpost Ridge Sentry)", "category": "person", "gender": "man", "pos": (65.0, -15.0), "territory": "HOME", "size": (0.65, 1.82), "temp_c": 37.2,
+         "route": [[65.0, -15.0], [68.0, -12.0], [62.0, -16.0], [65.0, -15.0]], "speed": 0.7},
         {"label": "Man (Bridge Sentry Kowalski)", "category": "person", "gender": "man", "pos": (0.0, 58.0), "territory": "HOME", "size": (0.65, 1.81), "temp_c": 37.1},
         {"label": "Man (Eastern Lookout Guard)", "category": "person", "gender": "man", "pos": (70.0, -25.0), "territory": "HOME", "size": (0.65, 1.80), "temp_c": 37.0},
         {"label": "Woman (Perimeter Patrol Officer)", "category": "person", "gender": "woman", "pos": (44.0, 15.0), "territory": "HOME", "size": (0.60, 1.74), "temp_c": 36.9},
-        {"label": "Animal (Mountain Deer)", "category": "wildlife", "animal_type": "mountain_deer", "pos": (72.0, 5.0), "territory": "HOME", "size": (1.40, 1.30), "temp_c": 35.1},
-        {"label": "Animal (Mountain Bighorn Sheep)", "category": "wildlife", "animal_type": "sheep", "pos": (68.0, 12.0), "territory": "HOME", "size": (1.30, 1.10), "temp_c": 35.3},
-        {"label": "Outpost Utility Rover", "category": "vehicle", "pos": (60.0, -10.0), "territory": "HOME", "size": (1.80, 1.50), "temp_c": 75.0},
-        {"label": "Comms Tower Repeater Mast", "category": "hazard", "pos": (66.0, -18.0), "territory": "HOME", "size": (1.00, 8.00), "temp_c": 22.0},
-
-        # Zone Bravo: Western Deep Pine Forest, Clearings, Wilderness
-        {"label": "Man (Foreign Forest Hiker)", "category": "person", "gender": "man", "pos": (-65.0, 50.0), "territory": "FOREIGN", "size": (0.65, 1.80), "temp_c": 37.0},
+        {"label": "Man (Foreign Forest Hiker)", "category": "person", "gender": "man", "pos": (-65.0, 50.0), "territory": "FOREIGN", "size": (0.65, 1.80), "temp_c": 37.0,
+         "route": [[-65.0, 50.0], [-60.0, 55.0], [-70.0, 48.0], [-65.0, 50.0]], "speed": 1.0},
         {"label": "Man (Deep Forest Scout)", "category": "person", "gender": "man", "pos": (-50.0, 48.0), "territory": "FOREIGN", "size": (0.65, 1.79), "temp_c": 37.1},
         {"label": "Woman (Forest Forager)", "category": "person", "gender": "woman", "pos": (-60.0, 38.0), "territory": "FOREIGN", "size": (0.60, 1.70), "temp_c": 36.9},
+        {"label": "Man (Foreign Border Crosser)", "category": "person", "gender": "man", "pos": (15.0, 38.0), "territory": "FOREIGN", "size": (0.65, 1.80), "temp_c": 37.1,
+         "route": [[15.0, 38.0], [12.0, 35.0], [18.0, 33.0], [15.0, 38.0]], "speed": 1.1},
+        {"label": "Woman (High Ground Observer)", "category": "person", "gender": "woman", "pos": (58.0, 74.0), "territory": "FOREIGN", "size": (0.60, 1.73), "temp_c": 36.8},
+        {"label": "Woman (Riverbank Civilian)", "category": "person", "gender": "woman", "pos": (42.0, 56.0), "territory": "FOREIGN", "size": (0.60, 1.70), "temp_c": 36.9,
+         "route": [[42.0, 56.0], [48.0, 54.0], [38.0, 58.0], [42.0, 56.0]], "speed": 0.9},
+        {"label": "Man (Northern Woodsman)", "category": "person", "gender": "man", "pos": (-8.0, 66.0), "territory": "FOREIGN", "size": (0.68, 1.84), "temp_c": 37.2},
+
+        # --- Wildlife Animals & Hazards ---
+        {"label": "Animal (Mountain Deer)", "category": "wildlife", "animal_type": "mountain_deer", "pos": (72.0, 5.0), "territory": "HOME", "size": (1.40, 1.30), "temp_c": 35.1},
+        {"label": "Animal (Mountain Bighorn Sheep)", "category": "wildlife", "animal_type": "sheep", "pos": (68.0, 12.0), "territory": "HOME", "size": (1.30, 1.10), "temp_c": 35.3},
         {"label": "Animal (Wildlife Deer Stag)", "category": "wildlife", "animal_type": "stag", "pos": (-55.0, 42.0), "territory": "FOREIGN", "size": (1.60, 1.45), "temp_c": 35.3},
         {"label": "Animal (Wildlife Deer Doe)", "category": "wildlife", "animal_type": "doe", "pos": (-45.0, 68.0), "territory": "FOREIGN", "size": (1.35, 1.25), "temp_c": 34.9},
         {"label": "Animal (Wildlife Deer Fawn)", "category": "wildlife", "animal_type": "fawn", "pos": (-52.0, 44.0), "territory": "FOREIGN", "size": (0.90, 0.85), "temp_c": 35.0},
-        {"label": "Thermal Hazard (Wildfire)", "category": "fire", "pos": (-65.0, 65.0), "territory": "FOREIGN", "size": (6.00, 5.00), "temp_c": 585.0},
-        {"label": "Thermal Hazard (Campfire)", "category": "fire", "pos": (-48.0, 55.0), "territory": "FOREIGN", "size": (1.20, 1.00), "temp_c": 420.0},
-
-        # Zone Charlie: River Corridor, Roadway, Northern Border Ridge
-        {"label": "Man (Foreign Border Crosser)", "category": "person", "gender": "man", "pos": (15.0, 38.0), "territory": "FOREIGN", "size": (0.65, 1.80), "temp_c": 37.1},
-        {"label": "Woman (High Ground Observer)", "category": "person", "gender": "woman", "pos": (58.0, 74.0), "territory": "FOREIGN", "size": (0.60, 1.73), "temp_c": 36.8},
-        {"label": "Woman (Riverbank Civilian)", "category": "person", "gender": "woman", "pos": (42.0, 56.0), "territory": "FOREIGN", "size": (0.60, 1.70), "temp_c": 36.9},
-        {"label": "Man (Northern Woodsman)", "category": "person", "gender": "man", "pos": (-8.0, 66.0), "territory": "FOREIGN", "size": (0.68, 1.84), "temp_c": 37.2},
         {"label": "Animal (Riverbank Forest Elk)", "category": "wildlife", "animal_type": "elk", "pos": (-20.0, 62.0), "territory": "FOREIGN", "size": (2.10, 1.70), "temp_c": 35.4},
         {"label": "Animal (Forest Elk Doe)", "category": "wildlife", "animal_type": "elk_doe", "pos": (-24.0, 66.0), "territory": "FOREIGN", "size": (1.80, 1.55), "temp_c": 35.1},
         {"label": "Animal (North Ridge Wolf)", "category": "wildlife", "animal_type": "wolf", "pos": (25.0, 70.0), "territory": "FOREIGN", "size": (1.20, 0.85), "temp_c": 36.2},
-        {"label": "Tactical Border ATV Quad", "category": "vehicle", "pos": (22.0, 36.0), "territory": "HOME", "size": (1.40, 1.20), "temp_c": 78.0},
-        {"label": "Foreign 4x4 Off-Roader", "category": "vehicle", "pos": (-15.0, 45.0), "territory": "FOREIGN", "size": (2.30, 1.90), "temp_c": 91.0},
+        {"label": "Thermal Hazard (Wildfire)", "category": "fire", "pos": (-65.0, 65.0), "territory": "FOREIGN", "size": (6.00, 5.00), "temp_c": 585.0},
+        {"label": "Thermal Hazard (Campfire)", "category": "fire", "pos": (-48.0, 55.0), "territory": "FOREIGN", "size": (1.20, 1.00), "temp_c": 420.0},
+        {"label": "Comms Tower Repeater Mast", "category": "hazard", "pos": (66.0, -18.0), "territory": "HOME", "size": (1.00, 8.00), "temp_c": 22.0},
         {"label": "Abandoned Cargo Container", "category": "hazard", "pos": (12.0, 36.0), "territory": "FOREIGN", "size": (2.50, 2.20), "temp_c": 19.5}
     ]
 
@@ -205,19 +235,32 @@ class ObjectDetectorTracker:
 
         # 2. Exact Perspective Spatial Target Projections with Strict Optical Resolution Limits
         MAX_DETECTION_RANGE = {
-            "person": 42.0,
-            "wildlife": 34.0,
-            "vehicle": 62.0,
-            "fire": 75.0,
-            "hazard": 50.0
+            "person": 45.0,
+            "wildlife": 38.0,
+            "vehicle": 72.0,
+            "building": 95.0,
+            "fire": 85.0,
+            "hazard": 60.0
         }
 
         is_nadir = (cam_pitch > 1.1)
+        cur_t = time.time()
 
         for act in self.KNOWN_ACTORS:
-            ax, ay = act["pos"]
+            # Dynamic route trajectory calculation for walking people and moving vehicles
+            if "route" in act and len(act["route"]) > 1:
+                route = act["route"]
+                spd = act.get("speed", 1.0)
+                idx = int((cur_t * spd) % len(route))
+                next_idx = (idx + 1) % len(route)
+                alpha = (cur_t * spd) % 1.0
+                ax = (1.0 - alpha) * route[idx][0] + alpha * route[next_idx][0]
+                ay = (1.0 - alpha) * route[idx][1] + alpha * route[next_idx][1]
+            else:
+                ax, ay = act["pos"]
+
             cat = act["category"]
-            max_range = MAX_DETECTION_RANGE.get(cat, 40.0)
+            max_range = MAX_DETECTION_RANGE.get(cat, 45.0)
 
             # Nadir ground radius interlock
             if is_nadir:
@@ -381,6 +424,7 @@ class ObjectDetectorTracker:
         color_map = {
             "person": (0, 240, 255),    # Tactical Cyan
             "vehicle": (0, 200, 255),   # Yellow-Orange
+            "building": (255, 180, 50), # Steel / Amber Slate for houses and buildings
             "wildlife": (80, 240, 100), # Phosphor Green
             "fire": (40, 50, 255),      # Crimson Red
             "smoke": (190, 190, 190),   # Neutral Gray
