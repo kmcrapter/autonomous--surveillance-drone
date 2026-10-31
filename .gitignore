@@ -8,5 +8,6 @@ __pycache__/
 *.tmp
 *.log
 data/db/*.db-journal
+data/db/camera_status.json
 data/snapshots/*
 data/reports/*
