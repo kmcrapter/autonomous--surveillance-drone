@@ -112,6 +112,57 @@ class BoustrophedonPlanner:
                 plan.extend(zone_wps)
         return plan
 
+    def generate_perimeter_sweep(self,
+                                  altitude: float = 15.0,
+                                  speed: float = 4.5) -> List[Dict[str, Any]]:
+        """Generates a complete Country A sovereign border perimeter sweep.
+        Sweeps all 4 outermost corners (SW, SE, NE, NW) and all 4 boundary edges
+        of Country A (X ∈ [-85, 85], Y ∈ [-55, 27.5]) before the interior pass.
+        Strictly stays within sovereign airspace (Y <= 27.5m < 28.5m standoff).
+        """
+        perimeter = [
+            # 1. Sovereign Southwest Outermost Corner
+            {"id": "perim_sw_corner", "zone_id": "zone_bravo", "x": -85.0, "y": -55.0, "z": altitude, "speed": speed},
+
+            # 3. South Territorial Boundary Sweep (West to East)
+            {"id": "perim_south_w1", "zone_id": "zone_bravo", "x": -55.0, "y": -55.0, "z": altitude, "speed": speed},
+            {"id": "perim_south_w2", "zone_id": "zone_alpha", "x": -25.0, "y": -55.0, "z": altitude, "speed": speed},
+            {"id": "perim_south_ctr", "zone_id": "zone_alpha", "x": 0.0, "y": -55.0, "z": altitude, "speed": speed},
+            {"id": "perim_south_e1", "zone_id": "zone_alpha", "x": 30.0, "y": -55.0, "z": altitude, "speed": speed},
+            {"id": "perim_south_e2", "zone_id": "zone_delta", "x": 60.0, "y": -55.0, "z": altitude, "speed": speed},
+
+            # 4. Sovereign Southeast Outermost Corner
+            {"id": "perim_se_corner", "zone_id": "zone_delta", "x": 85.0, "y": -55.0, "z": altitude, "speed": speed},
+
+            # 5. East Territorial Boundary Sweep (South to North along Outpost Ridge)
+            {"id": "perim_east_s", "zone_id": "zone_delta", "x": 85.0, "y": -35.0, "z": altitude, "speed": speed},
+            {"id": "perim_east_mid", "zone_id": "zone_delta", "x": 85.0, "y": -10.0, "z": altitude, "speed": speed},
+            {"id": "perim_east_n", "zone_id": "zone_delta", "x": 85.0, "y": 12.0, "z": altitude, "speed": speed},
+
+            # 6. Sovereign Northeast Outermost Corner (Border Standoff)
+            {"id": "perim_ne_corner", "zone_id": "zone_delta", "x": 85.0, "y": 27.5, "z": altitude, "speed": speed},
+
+            # 7. Northern International Border Standoff Line Sweep (East to West along Country A fence line)
+            {"id": "perim_border_e2", "zone_id": "zone_charlie", "x": 60.0, "y": 27.5, "z": altitude, "speed": speed},
+            {"id": "perim_border_e1", "zone_id": "zone_charlie", "x": 30.0, "y": 27.5, "z": altitude, "speed": speed},
+            {"id": "perim_border_gate", "zone_id": "zone_alpha", "x": 0.0, "y": 27.5, "z": altitude, "speed": speed},
+            {"id": "perim_border_w1", "zone_id": "zone_bravo", "x": -30.0, "y": 27.5, "z": altitude, "speed": speed},
+            {"id": "perim_border_w2", "zone_id": "zone_bravo", "x": -60.0, "y": 27.5, "z": altitude, "speed": speed},
+
+            # 8. Sovereign Northwest Outermost Corner (Border Standoff)
+            {"id": "perim_nw_corner", "zone_id": "zone_bravo", "x": -85.0, "y": 27.5, "z": altitude, "speed": speed},
+
+            # 9. West Territorial Boundary Sweep (North to South through Western Forest)
+            {"id": "perim_west_n", "zone_id": "zone_bravo", "x": -85.0, "y": 10.0, "z": altitude, "speed": speed},
+            {"id": "perim_west_mid", "zone_id": "zone_bravo", "x": -85.0, "y": -15.0, "z": altitude, "speed": speed},
+            {"id": "perim_west_s", "zone_id": "zone_bravo", "x": -85.0, "y": -35.0, "z": altitude, "speed": speed},
+            {"id": "perim_sw_loop_close", "zone_id": "zone_bravo", "x": -85.0, "y": -55.0, "z": altitude, "speed": speed},
+
+            # 10. Transition Inward to Base and Interior Lawnmower Grid
+            {"id": "perim_transition_in", "zone_id": "transit", "x": -45.0, "y": -25.0, "z": altitude, "speed": 4.0}
+        ]
+        return perimeter
+
     def generate_perimeter_plan(self,
                                 altitude: float = 15.0,
                                 speed: float = 4.5,

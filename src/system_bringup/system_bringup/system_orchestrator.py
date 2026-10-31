@@ -73,9 +73,9 @@ class SystemOrchestrator(Node):
         self.prev_time = time.time()
         self.last_gazebo_time = 0.0
 
-        # Coverage Waypoints
+        # Coverage Waypoints: Perimeter boundary sweep first, then systematic interior boustrophedon fill
         self.ordered_zones = ZoneManager.get_ordered_zones()
-        self.waypoints = self.planner.generate_full_mission_plan(self.ordered_zones)
+        self.waypoints = self.planner.generate_perimeter_sweep() + self.planner.generate_full_mission_plan(self.ordered_zones)
         self.wp_index = 0
         self.saved_resume_wp = 0
 
@@ -412,16 +412,24 @@ class SystemOrchestrator(Node):
 
                 if scenario == "wildlife_tracking":
                     self.ordered_zones = ZoneManager.get_ordered_zones(["zone_bravo", "zone_alpha", "zone_charlie", "zone_delta"])
-                    self.waypoints = self.planner.generate_full_mission_plan(self.ordered_zones)
+                    perimeter_wps = self.planner.generate_perimeter_sweep()
+                    interior_wps = self.planner.generate_full_mission_plan(self.ordered_zones)
+                    self.waypoints = perimeter_wps + interior_wps
                 elif scenario == "vehicle_intercept":
                     self.ordered_zones = ZoneManager.get_ordered_zones(["zone_charlie", "zone_alpha", "zone_bravo", "zone_delta"])
-                    self.waypoints = self.planner.generate_full_mission_plan(self.ordered_zones)
+                    perimeter_wps = self.planner.generate_perimeter_sweep()
+                    interior_wps = self.planner.generate_full_mission_plan(self.ordered_zones)
+                    self.waypoints = perimeter_wps + interior_wps
                 elif scenario == "wildfire_hazard":
                     self.ordered_zones = ZoneManager.get_ordered_zones(["zone_bravo", "zone_charlie", "zone_delta", "zone_alpha"])
-                    self.waypoints = self.planner.generate_full_mission_plan(self.ordered_zones)
+                    perimeter_wps = self.planner.generate_perimeter_sweep()
+                    interior_wps = self.planner.generate_full_mission_plan(self.ordered_zones)
+                    self.waypoints = perimeter_wps + interior_wps
                 else:
                     self.ordered_zones = ZoneManager.get_ordered_zones()
-                    self.waypoints = self.planner.generate_full_mission_plan(self.ordered_zones)
+                    perimeter_wps = self.planner.generate_perimeter_sweep()
+                    interior_wps = self.planner.generate_full_mission_plan(self.ordered_zones)
+                    self.waypoints = perimeter_wps + interior_wps
 
                 self.flight_state = "PRECHECK"
                 self.mission_state = "PRECHECK"
@@ -456,6 +464,7 @@ class SystemOrchestrator(Node):
             self.roll = self.pitch = self.yaw = 0.0
             self.total_dist_m = 0.0
             self.wp_index = 0
+            self.waypoints = self.planner.generate_perimeter_sweep() + self.planner.generate_full_mission_plan(self.ordered_zones)
             self.covered_cells.clear()
             self.logged_tracks.clear()
             self.battery = BatteryModel(capacity_wh=555.0, safety_reserve_pct=20.0)
@@ -472,11 +481,11 @@ class SystemOrchestrator(Node):
             pat = params.get("pattern", "boustrophedon").lower()
             self.surveillance_pattern = pat
             if pat == "perimeter":
-                self.waypoints = self.planner.generate_perimeter_plan()
+                self.waypoints = self.planner.generate_perimeter_sweep()
             elif pat == "spiral":
                 self.waypoints = self.planner.generate_spiral_plan(self.drone_pos[0], self.drone_pos[1])
             else:
-                self.waypoints = self.planner.generate_full_mission_plan(self.ordered_zones)
+                self.waypoints = self.planner.generate_perimeter_sweep() + self.planner.generate_full_mission_plan(self.ordered_zones)
             self.wp_index = 0
             self.get_logger().info(f"Surveillance pattern set to {pat} ({len(self.waypoints)} waypoints)")
         elif action == "TELEOP":

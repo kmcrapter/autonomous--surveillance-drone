@@ -546,22 +546,31 @@ document.addEventListener('DOMContentLoaded', () => {
       const covPctEl = document.getElementById('mapCoveragePct');
       const covAreaEl = document.getElementById('mapCoverageArea');
       const covBarEl = document.getElementById('mapCoverageBar');
-      if (covPctEl) covPctEl.textContent = `${cov.percentage.toFixed(1)}%`;
-      if (covAreaEl) covAreaEl.textContent = `(${(cov.area_covered_m2 || 0).toLocaleString()} m²)`;
-      if (covBarEl) covBarEl.style.width = `${Math.min(100, cov.percentage)}%`;
+      const areaCoveredValEl = document.getElementById('areaCoveredValue');
+      const coverageProgressBarEl = document.getElementById('coverageProgressBar');
+
+      if (covPctEl) covPctEl.textContent = `${(cov.percentage || cov.coverage_pct || 0).toFixed(1)}%`;
+      if (covAreaEl) covAreaEl.textContent = `(${((cov.area_covered_m2 || 0) / 10000).toFixed(2)} ha)`;
+      if (covBarEl) covBarEl.style.width = `${Math.min(100, cov.percentage || cov.coverage_pct || 0)}%`;
+      if (coverageProgressBarEl) coverageProgressBarEl.style.width = `${Math.min(100, cov.coverage_pct || cov.percentage || 0)}%`;
+      if (areaCoveredValEl) areaCoveredValEl.textContent = `${(cov.coverage_pct || cov.percentage || 0).toFixed(1)}% (${Math.round(cov.area_covered_m2 || 0).toLocaleString()} m²)`;
 
       if (cov.cells_sample && Array.isArray(cov.cells_sample)) {
+        // Use 20m display cells for visibility (group 5m cells into 20m visual squares)
         cov.cells_sample.forEach(([gx, gy]) => {
-          const key = `${gx}_${gy}`;
+          // Snap to 20m grid for display
+          const snapX = Math.floor(gx / 20) * 20 + 10;
+          const snapY = Math.floor(gy / 20) * 20 + 10;
+          const key = `${snapX}_${snapY}`;
           if (!renderedGridCells.has(key)) {
             renderedGridCells.add(key);
-            const p1 = cartesianToGps(gx - 2.5, gy - 2.5);
-            const p2 = cartesianToGps(gx + 2.5, gy + 2.5);
+            const p1 = cartesianToGps(snapX - 10, snapY - 10);
+            const p2 = cartesianToGps(snapX + 10, snapY + 10);
             L.rectangle([p1, p2], {
               color: '#00e599',
               weight: 0.5,
               fillColor: '#00e599',
-              fillOpacity: 0.20
+              fillOpacity: 0.22
             }).addTo(coverageLayerGroup);
           }
         });
@@ -637,6 +646,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const allCamBoxes = [boxOverview, boxForward, boxThermal, boxNvg, boxDownward, boxRear, boxLeft, boxRight, boxPentagrid];
 
+  const placeholderSvg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='480' viewBox='0 0 640 480'%3E%3Crect width='640' height='480' fill='%2303060c'/%3E%3Cpath d='M20 20 L40 20 M20 20 L20 40 M620 20 L600 20 M620 20 L620 40 M20 460 L40 460 M20 460 L20 440 M620 460 L600 460 M620 460 L620 440' stroke='%2300f0ff' stroke-width='2' fill='none'/%3E%3Ctext x='320' y='235' fill='%2300f0ff' font-family='monospace' font-size='15' font-weight='bold' text-anchor='middle' letter-spacing='2'%3E● SENSOR ONLINE [AWAITING FRAME]%3C/text%3E%3Ctext x='320' y='265' fill='%235e7392' font-family='monospace' font-size='12' text-anchor='middle'%3ERESILIENT HIGH-SPEED MJPEG BUS%3C/text%3E%3C/svg%3E";
+
   function showCamBoxes(activeBoxes, viewClass = 'single-view') {
     if (!cameraViewports) return;
     cameraViewports.className = `camera-viewports ${viewClass}`;
@@ -647,6 +658,9 @@ document.addEventListener('DOMContentLoaded', () => {
         b.classList.remove('hidden');
         if (img) {
           const streamSrc = img.getAttribute('data-stream-src') || img.dataset.streamSrc;
+          img.onerror = () => {
+            img.src = placeholderSvg;
+          };
           if (streamSrc && (!img.src || !img.src.includes(streamSrc))) {
             img.src = streamSrc;
           }
