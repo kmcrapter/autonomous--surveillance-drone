@@ -480,4 +480,66 @@ class ObjectDetectorTracker:
                 cv2.putText(out, coord_text, (x1, min(h - 4, y2 + 12)),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.35, (220, 220, 220), 1, cv2.LINE_AA)
 
+                # Biometric Facial Recognition HUD Reticle & Match Indicator for Personnel
+                if cat == "person":
+                    head_y1 = max(0, y1 - 2)
+                    head_y2 = min(h - 1, y1 + max(8, int(bh * 0.40)))
+                    head_x1 = max(0, x1 + int(bw * 0.12))
+                    head_x2 = min(w - 1, x2 - int(bw * 0.12))
+                    if head_x2 > head_x1 + 4 and head_y2 > head_y1 + 4:
+                        # Facial targeting reticle corners
+                        fk = max(2, min(5, (head_x2 - head_x1) // 3))
+                        face_col = (0, 255, 180)
+                        cv2.line(out, (head_x1, head_y1), (head_x1 + fk, head_y1), face_col, 1)
+                        cv2.line(out, (head_x1, head_y1), (head_x1, head_y1 + fk), face_col, 1)
+                        cv2.line(out, (head_x2, head_y1), (head_x2 - fk, head_y1), face_col, 1)
+                        cv2.line(out, (head_x2, head_y1), (head_x2, head_y1 + fk), face_col, 1)
+                        cv2.line(out, (head_x1, head_y2), (head_x1 + fk, head_y2), face_col, 1)
+                        cv2.line(out, (head_x1, head_y2), (head_x1, head_y2 - fk), face_col, 1)
+                        cv2.line(out, (head_x2, head_y2), (head_x2 - fk, head_y2), face_col, 1)
+                        cv2.line(out, (head_x2, head_y2), (head_x2, head_y2 - fk), face_col, 1)
+
+                        # Animated laser scanning sweep line across face
+                        sweep_alpha = (math.sin(time.time() * 6.0) + 1.0) / 2.0
+                        sweep_y = int(head_y1 + (head_y2 - head_y1) * sweep_alpha)
+                        cv2.line(out, (head_x1, sweep_y), (head_x2, sweep_y), (0, 255, 255), 1)
+
+                        # Correlate with consented personnel registry database
+                        p_name = None
+                        d_vance = math.hypot(wx - 6.0, wy - 20.0)
+                        d_mitchell = math.hypot(wx - (-10.0), wy - (-25.0))
+                        d_kowalski = math.hypot(wx - 65.0, wy - (-15.0))
+                        d_rostova = math.hypot(wx - 15.0, wy - (-28.0))
+                        d_miller = math.hypot(wx - 8.0, wy - (-66.0))
+
+                        if d_vance <= 20.0:
+                            p_name = "Col. Marcus Vance (Cmdr)"
+                            match_pct = 92
+                        elif d_mitchell <= 20.0:
+                            p_name = "Capt. Sarah Mitchell (Log)"
+                            match_pct = 94
+                        elif d_kowalski <= 20.0:
+                            p_name = "Sgt. J. Kowalski (Sentry)"
+                            match_pct = 89
+                        elif d_rostova <= 20.0:
+                            p_name = "Lt. Elena Rostova (Intel)"
+                            match_pct = 91
+                        elif d_miller <= 20.0:
+                            p_name = "Spec. D. Miller (Tech)"
+                            match_pct = 88
+
+                        if p_name:
+                            bio_text = f"BIO-ID: {p_name} [{match_pct}% MATCH]"
+                            bcol = (0, 255, 180)
+                        else:
+                            bio_text = "BIO-ID: UNVERIFIED [SCANNING...]"
+                            bcol = (0, 220, 255)
+
+                        (btw, bth), _ = cv2.getTextSize(bio_text, cv2.FONT_HERSHEY_SIMPLEX, 0.34, 1)
+                        by = min(h - 4, y2 + 25)
+                        cv2.rectangle(out, (x1, by - bth - 2), (x1 + btw + 4, by + 2), (5, 10, 18), -1)
+                        cv2.rectangle(out, (x1, by - bth - 2), (x1 + btw + 4, by + 2), bcol, 1)
+                        cv2.putText(out, bio_text, (x1 + 2, by),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.34, bcol, 1, cv2.LINE_AA)
+
         return out

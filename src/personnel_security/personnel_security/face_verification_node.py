@@ -105,7 +105,7 @@ class FaceVerificationNode(Node):
         face_visible = True
         reasons = []
 
-        if min(w, h) < 18:
+        if min(w, h) < 6:
             face_visible = False
             reasons.append("RESOLUTION_TOO_LOW_LONG_DISTANCE")
 
@@ -177,18 +177,19 @@ class FaceVerificationNode(Node):
                     "timestamp": now
                 })
             else:
-                sim_seed = 999
-                dist_vance = ((wpos[0] - 6.0)**2 + (wpos[1] - 20.0)**2)**0.5
-                dist_mitchell = ((wpos[0] + 10.0)**2 + (wpos[1] + 25.0)**2)**0.5
-                dist_kowalski = ((wpos[0] - 65.0)**2 + (wpos[1] + 15.0)**2)**0.5
-                dist_rostova = ((wpos[0] + 15.0)**2 + (wpos[1] - 28.0)**2)**0.5
-                dist_miller = ((wpos[0] + 8.0)**2 + (wpos[1] - 66.0)**2)**0.5
+                best_profile = None
+                best_dist = 999.0
+                for pid, profile in PersonnelRegistryManager.get_all_profiles().items():
+                    px, py = profile["default_world_coords"]
+                    d_p = ((wpos[0] - px)**2 + (wpos[1] - py)**2)**0.5
+                    if d_p < best_dist:
+                        best_dist = d_p
+                        best_profile = profile
 
-                if dist_vance < 14.0: sim_seed = 101
-                elif dist_mitchell < 14.0: sim_seed = 102
-                elif dist_kowalski < 14.0: sim_seed = 103
-                elif dist_rostova < 14.0: sim_seed = 104
-                elif dist_miller < 14.0: sim_seed = 105
+                if best_profile and best_dist <= 25.0:
+                    sim_seed = int(best_profile["personnel_id"].split("-")[1])
+                else:
+                    sim_seed = 999
 
                 base_vec = np.array(_generate_synthetic_embedding(sim_seed))
                 noise = np.random.RandomState(int(now * 10) % 1000).randn(128) * 0.08
